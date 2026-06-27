@@ -1,0 +1,11 @@
+# OARF — runtime dependencies (Python 3.10+).
+# Everything (OARF, channel discovery, all baselines, GARCH/HAR experts, the
+# evaluation harness, DM/MCS) is implemented from scratch in NumPy/SciPy; no
+# modelling framework is required.
+numpy>=1.24
+scipy>=1.10          # Student-t / stats for Diebold-Mariano
+pandas>=2.0          # real-data panel alignment
+matplotlib>=3.7      # figures
+requests>=2.28       # data download
+xlrd>=2.0            # read the GPR daily .xls
+openpyxl>=3.1        # read .xlsx exports (e.g. a manual EUA file)
