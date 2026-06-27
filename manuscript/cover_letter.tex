@@ -1,0 +1,167 @@
+% Cover letter / response to reviewers — OARF
+% Compile with pdflatex (OT1 text encoding -> vector Computer Modern Type-1 fonts).
+\documentclass[11pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage{cmap}
+\input{glyphtounicode}
+\pdfgentounicode=1
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath}
+\usepackage{enumitem}
+\usepackage[hidelinks]{hyperref}
+\usepackage{xurl}
+\usepackage{parskip}
+
+\newcommand{\reviewer}[1]{\medskip\noindent\textbf{#1}\par}
+\newcommand{\response}{\noindent\emph{Response.}\ }
+
+\begin{document}
+
+\thispagestyle{empty}
+
+\noindent
+The Editors\\
+\textit{Computational Economics}\\
+Springer
+
+\bigskip
+\noindent Re: Revised submission --- \textbf{``Online Anchor-Robust Forecasting under
+Economic Regime Shift''}
+
+\bigskip
+\noindent Dear Editors,
+
+Thank you for the opportunity to submit a revised version of our manuscript, and please
+convey our thanks to the reviewer for an exceptionally constructive sequence of reports.
+The successive reviews have materially improved the paper: they pushed us from an
+over-claimed framing toward an honest, carefully scoped contribution, and they prompted
+two new experiments that we believe close the last substantive gaps.
+
+We summarise the paper's positioning, then respond point by point to the most recent
+report. All changes are in the resubmitted manuscript; line and section references
+below are to that version.
+
+\section*{Summary of the contribution}
+
+We present \textsc{OARF}, an online (streaming, leak-free) implementation of anchor
+regression for forecasting under economic regime shift, together with an
+interventional-robustness evaluation protocol and a diagnostic empirical study. We are
+deliberate about scope:
+\begin{itemize}[leftmargin=1.4em,itemsep=1pt]
+\item The \emph{fixed-channel} method is the core contribution. It carries a
+fixed-anchor interventional-regret guarantee (two rates, $O(\sqrt{T(1{+}K)})$ with
+oracle moments and $O((1{+}K)T^{2/3})$ with online EMA moments) and, on a controlled
+SCM with a held-out intervention grid, cuts worst-case interventional error well below
+reactive and distributionally robust online learners.
+\item The \emph{learned-channel} add-on (\textsc{OARF-CD}) is presented as exploratory
+and diagnostic only: it is heuristic, unstable across seeds, and not covered by the
+theorem.
+\item On sixteen years of public daily energy variance-proxy data the method is
+competitive but \emph{not} statistically superior --- every retained method lies in the
+Model Confidence Set --- and we report this null result plainly.
+\end{itemize}
+The paper is thus a methodological and diagnostic contribution: a streaming
+anchor-regression update, an interventional-robustness protocol, and stress tests and
+scenarios mapping when proactive anchor robustness helps and when it fails.
+
+\section*{Point-by-point response to the latest report}
+
+\reviewer{1. Keyword ``causal robustness'' may invite stricter causal-identification
+expectations.}
+\response We replaced it with ``anchor robustness; interventional robustness'' and use
+``anchor-based interventional robustness'' consistently in the text.
+
+\reviewer{2. Related work still says OARF ``learns the anchor channel from data.''}
+\response Revised to: ``\dots makes the estimator online; we additionally study a
+heuristic add-on that attempts to estimate the anchor channel from data, while treating
+the analyst-supplied channel as the primary mode.''
+
+\reviewer{3. ``OARF aims to make the trigger unnecessary'' is too strong.}
+\response Softened to: ``\dots tests whether, when an informative anchor is available,
+part of the need for reactive triggering can be reduced \dots''
+
+\reviewer{4. ``Never dominated'' reads as a formal Pareto claim.}
+\response We removed dominance language. The real-data statement now reads: ``OARF is
+statistically indistinguishable from the strongest baselines and broadly competitive
+across metrics, but the public daily data do not provide statistically decisive
+evidence of superior performance for any method, OARF included.''
+
+\reviewer{5. The contribution may now sound too modest; sharpen it.}
+\response We added an explicit ``What to cite this paper for'' statement to the
+conclusion, naming the three publishable contributions: (i) a principled streaming form
+of anchor regression with a fixed-anchor interventional-regret guarantee; (ii) an
+interventional-robustness evaluation protocol; (iii) a diagnostic study, with a
+pre-deployment checklist, for deciding when proactive anchor robustness is appropriate.
+
+\reviewer{6. The Ader/AdaGrad mismatch remains a theoretical weakness; verify the claim
+or do not make it.}
+\response We took this seriously and \emph{tested} it rather than asserting it. We
+implemented the Ader-wrapped variant (a five-expert step-size pool with a Hedge
+meta-learner and projected OGD) and compared it with the deployed AdaGrad model on the
+synthetic benchmark over 12 seeds (new Appendix~B). Both step rules deliver the
+interventional-robustness benefit; their per-seed worst-case errors are rank-correlated
+at Spearman $\rho=0.80$; and AdaGrad is in fact slightly more accurate and stable. The
+theory/implementation remark now cites these measured numbers.
+
+\reviewer{7. Visually separate the learned-channel method.}
+\response \textsc{OARF-CD} is now labelled ``exploratory'' in the synthetic results
+table and the baseline table, and is described throughout as an add-on rather than a
+co-equal method.
+
+\reviewer{8. Add a ``What to cite this paper for'' paragraph.}
+\response Added to the conclusion (see point 5).
+
+\reviewer{9. Box the practical recipe.}
+\response The diagnostic recipe is now a boxed ``Pre-deployment checklist for OARF''
+with the four checks (domain-valid anchor; stable anchor--residual correlation;
+warm-up stress-test benefit; fallback if the channel is unstable), plus an explicit
+gating/fallback rule.
+
+\reviewer{10. More careful language around ``source of shifts.''}
+\response We now describe the macro-financial series as an ``observable shift channel''
+or co-moving proxy and reserve the strict causal reading for the synthetic SCM, where
+it holds by construction.
+
+\reviewer{11. The real-data event study is still absent.}
+\response Added (new Appendix~C, with figure). We run fixed-anchor OARF and the OGD
+floor around the COVID-19 crash and the 2022 energy shock, plotting the cumulative
+squared-loss gap and the anchor--residual correlation. We report the result honestly:
+OARF holds the anchor--residual correlation below OGD in \emph{every} window (the
+mechanism is active), but leads on loss in only one of four window/commodity
+combinations --- consistent with, and concretising, the null aggregate result rather
+than demonstrating superiority.
+
+\reviewer{12. Check appendix details for anonymity.}
+\response The code repository is public and \emph{not} anonymised; we state this
+explicitly and offer to provide an anonymised mirror and withhold the link until
+acceptance should the journal require double-blind review.
+
+\reviewer{13. Final proofreading; check accents, hats, arrows, line breaks.}
+\response We diagnosed and fixed the underlying cause of the earlier
+garbled-glyph rendering: the manuscript had been compiled with T1 font encoding without
+the Latin~Modern / cm-super Type-1 fonts installed, which forced a bitmap Type-3
+fallback for the body text. The text is now set in vector Computer Modern Type-1 fonts
+(verified at the font level), and we re-checked mathematical accents, hats, arrows and
+long-URL line breaks.
+
+\section*{Earlier rounds}
+
+For completeness, earlier revisions also: restructured the abstract into
+problem/method/theory/evidence; rewrote the theorem as ``Fixed-anchor OARF
+interventional regret'' with a complete proof; clarified Algorithm~1 (intercept vs
+coefficient gradients, dimensions, ridge sign, projection); added stress tests and
+assumption-violation scenarios mapping where the method fails; added warm-up
+anchor-selector baselines; moved to 50-seed medians with interquartile ranges and an
+alignment-versus-robustness scatter; and reframed the real-data section around the
+Model Confidence Set with exact inclusion $p$-values.
+
+\bigskip
+We hope the reviewer finds the manuscript substantially strengthened and now suitable
+for publication. We are grateful for the care that went into the reports and remain
+happy to make further adjustments.
+
+\bigskip
+\noindent Sincerely,\\
+The Authors
+
+\end{document}
