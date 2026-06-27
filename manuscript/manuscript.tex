@@ -32,6 +32,7 @@
 
 \theoremstyle{plain}
 \newtheorem{theorem}{Theorem}
+\newtheorem{lemma}{Lemma}
 \newtheorem{assumption}{Assumption}
 \newtheorem{proposition}{Proposition}
 \theoremstyle{remark}
@@ -75,8 +76,11 @@ regime drivers toward zero; and, in its distinctive second layer, \emph{discover
 that channel online} from the data rather than requiring the analyst to name it.
 To evaluate such a method we introduce \emph{interventional regret} --- regret
 against the best regime-conditional predictor under the worst-case bounded future
-intervention on the regime driver --- and prove an $O(\sqrt{T(1+K)})$ bound for the
-fixed-channel learner against a comparator that switches at most $K$ times. On a
+intervention on the regime driver --- and prove that the fixed-channel learner is
+\emph{no-regret} in this sense against a comparator that switches at most $K$ times:
+the regret is $O(\sqrt{T(1+K)})$ with oracle anchor moments and $O((1{+}K)T^{2/3})$
+for the fully online estimator, the latter being the price of learning the
+robustness geometry without changepoint detection. On a
 controlled structural-causal-model benchmark with a held-out grid of interventions
 $\doop(A:=\nu)$, \OARF{} reduces the worst-case interventional error by
 $55$--$67\%$ relative to reactive online learners and to the most recent
@@ -156,17 +160,19 @@ robustness term is built from EMA cross-moments of \emph{centred} variables;
 centring removes the regime mean-shift --- the intervention itself --- and leaves
 the within-regime covariance that shapes the robustness set. Setting the penalty
 $\xi=0$ recovers online gradient descent exactly.
-\item \textbf{Online intervention-channel discovery} (Section~\ref{sec:channel}).
+\item \textbf{Online intervention-channel discovery} (Section~\ref{sec:method}).
 A two-timescale rule learns \emph{which directions} of the observable context act
 as the anchor, by maximising the across-regime dispersion of the context subject
 to a norm constraint --- lifting the method above ``a known batch estimator run
 online'' and making it usable when the analyst cannot name the channel.
-\item \textbf{Interventional regret and a guarantee} (Section~\ref{sec:theory}). We
+\item \textbf{Interventional regret and a guarantee} (Section~\ref{sec:method}). We
 formalise regret against the best regime-conditional predictor under the worst-case
-bounded intervention $\doop(A:=\nu)$ and show that the fixed-channel learner attains
-$O(\sqrt{T(1+K)})$ against a comparator with at most $K$ switches, with no prior
-knowledge of $K$, and we are explicit about why the comparator must be
-regime-conditional rather than adversarial \citep{uziel2017growth}.
+bounded intervention $\doop(A:=\nu)$ and prove, with a complete argument, that the
+fixed-channel learner achieves sublinear interventional regret against a $K$-switch
+comparator with no prior knowledge of $K$ --- $O(\sqrt{T(1+K)})$ with oracle anchor
+moments, $O((1{+}K)T^{2/3})$ for the online estimator --- and we are explicit about
+why the comparator must be regime-conditional rather than adversarial
+\citep{uziel2017growth}.
 \item \textbf{A complete, reproducible evaluation} (Sections~\ref{sec:setup}--\ref{sec:results}).
 We pair a controlled structural-causal-model benchmark, in which a held-out grid of
 interventions makes interventional robustness measurable against ground truth, with
@@ -251,7 +257,7 @@ evaluation.
 
 \section{The OARF method and its guarantee}\label{sec:method}
 
-\subsection{Setup and a leak-free protocol}\label{sec:setup-notation}
+\paragraph{Setup and a leak-free protocol.}
 We work in discrete time $t=1,\dots,T$. At each step the forecaster observes
 predictors $x_t\in\R^d$ --- which in a pure forecasting problem are explanatory
 variables and in a combination problem are the forecasts of several base models ---
@@ -266,7 +272,7 @@ $y_t$ and update, and every standardisation uses past-only statistics; when we l
 evaluate a frozen learner on held-out interventions we replay exactly that frozen,
 past-only standardiser, so no future information can ever enter a forecast.
 
-\subsection{The causal-robustness objective}\label{sec:objective}
+\paragraph{The causal-robustness objective.}
 Following anchor regression \citep{rothenhausler2021anchor}, \OARF{} trades raw
 predictability against invariance of the residual to the anchor by minimising
 \begin{equation}\label{eq:bar}
@@ -296,7 +302,7 @@ $\E[aa^\top]$ --- not the isotropic ball of the distributionally robust methods 
 Section~\ref{sec:related} --- and this is the geometric distinction our evaluation
 sets out to test.
 
-\subsection{A streaming anchor-gradient update}\label{sec:update}
+\paragraph{A streaming anchor-gradient update.}
 The gradient of \eqref{eq:bar} in the coefficient block separates into a prediction
 term and a robustness term,
 \begin{equation}\label{eq:grad}
@@ -326,7 +332,7 @@ rate behave sensibly across features of very different scale. The decay $\beta$ 
 how quickly the moment estimates forget, and so how tightly they track the current
 regime.
 
-\subsection{Discovering the channel online}\label{sec:channel}
+\paragraph{Discovering the channel online.}
 Everything so far assumes the analyst has supplied the channel $B$. The layer that
 makes \OARF{} more than ``anchor regression, online'' removes that assumption. The
 guiding observation is that, under the anchor model, a regime acts on the observable
@@ -373,62 +379,166 @@ $\epsilon,\lambda_2$, block $L$, channel $B$ (or random init if learning)
 \end{algorithmic}
 \end{algorithm}
 
-\subsection{Interventional regret}\label{sec:theory}
-To state what \OARF{} guarantees we need a regret notion that rewards robustness to
-\emph{future} interventions, not merely good tracking of the past. For a radius
-$\rho\ge 0$ define
+\paragraph{Interventional regret.} To state what \OARF{} guarantees we need a regret
+notion that rewards robustness to \emph{future} interventions, not merely good tracking
+of the past. For a radius $\rho\ge 0$ define
 \begin{equation}\label{eq:intreg}
 \mathrm{IntReg}_T(\rho)=\sum_{t=1}^T\ell_t(w_t)
- -\min_{w\in\mathcal{W}}\sum_{t=1}^T\ \sup_{\|\nu_t\|\le\rho}\
- \E_{\,\doop(a:=\nu_t)}\!\big[(y_t-w^\top\phi(x_t))^2\big]:
+ -\min_{u\in\mathcal{W}}\sum_{t=1}^T\ \sup_{\|\nu_t\|\le\rho}\
+ \E_{\,\doop(a:=\nu_t)}\!\big[(y_t-u_t^\top\phi(x_t))^2\big]:
 \end{equation}
-the learner's realised loss, compared against the best fixed comparator in a class
+the learner's realised loss, measured against the best comparator in a class
 $\mathcal{W}$ that is itself stress-tested by the worst bounded intervention at every
-step. We make three assumptions, each mild and each used in a specific place.
+step. We make four assumptions, each mild and each used in a specific place.
 
-\begin{assumption}\label{ass:bounded} (Bounded features and anchor.) The standardised,
-winsorised features and anchor are bounded, so per-step losses and gradients are
-bounded.
+\begin{assumption}\label{ass:bounded} (Boundedness.) The standardised, winsorised
+features and anchor are bounded, so the per-step gradients of the surrogate below are
+bounded in norm by a constant $G$, and the comparator class $\mathcal{W}$ lies in a
+Euclidean ball of radius $D$.
 \end{assumption}
 \begin{assumption}\label{ass:scm} (Linear-SCM anchor model.) The data follow a linear
-structural causal model in which the anchor enters as in Section~\ref{sec:objective},
-so the equivalence of Proposition~\ref{prop:equiv} holds within each regime.
+structural causal model in which the anchor enters as in Section~\ref{sec:method},
+so the equivalence of Proposition~\ref{prop:equiv} holds within each regime, and the
+radius is adequate, $\rho(\xi)\ge\max_t\|\nu_t^\star\|$, where $\nu_t^\star$ is the
+realised regime's anchor displacement (so each realised regime is one admissible
+intervention in the ball).
 \end{assumption}
-\begin{assumption}\label{ass:comp} (Regime-conditional comparator.) $\mathcal{W}$ is the
-class of regime-conditional predictors that switch at most $K$ times.
+\begin{assumption}\label{ass:comp} (Oblivious regime schedule and comparator.) The
+regime schedule is exogenous and oblivious to the learner; the per-step worst-case
+risk $\phi_t$ defined below is therefore a deterministic function of $w$, and
+$\mathcal{W}$ is the class of regime-conditional comparators that switch at most $K$
+times (path length $P_T\le 2DK$).
+\end{assumption}
+\begin{assumption}\label{ass:moment} (Within-regime stationarity.) Within each regime
+the joint distribution of $(\phi,a,y)$ is stationary with mixing fast relative to the
+EMA window, so the EMA moment estimates obey the concentration of Lemma~\ref{lem:mom}.
 \end{assumption}
 
-\begin{theorem}[Fixed-channel interventional regret]\label{thm:main}
-Under Assumptions~\ref{ass:bounded}--\ref{ass:comp}, the streaming update
-\eqref{eq:update} with a fixed channel attains, without prior knowledge of $K$,
-$\mathrm{IntReg}_T(\rho(\xi))=O\!\big(\sqrt{T(1+K)}\big)$.
-\end{theorem}
+The proof rests on viewing Algorithm~\ref{alg:oarf} as online gradient descent, fed
+\emph{inexact} gradients, on a sequence of convex per-step risks; we isolate the three
+ingredients as lemmas and then assemble them. Throughout, $\phi_t(w):=\sup_{\|\nu\|\le
+\rho(\xi)}\E_{\doop(a:=\nu)}[(y_t-w^\top\phi(x_t))^2]$ is the per-step worst-case risk
+appearing in \eqref{eq:intreg}.
 
-\begin{proof}[Proof strategy]
-The argument has three steps. First, the per-step anchor-penalised loss is convex in
-$w$, so the dynamic-regret theory for online gradient descent
-\citep{zinkevich2003ogd,hazan2016oco} yields an $O(\sqrt{T(1+P_T)})$ bound against any
-drifting comparator with path length $P_T$, and a comparator that switches $K$ times
-has $P_T=O(K)$. Second, the equivalence \eqref{eq:equiv} translates the penalised
-comparator into the worst-case-intervention comparator at radius $\rho(\xi)$, which is
-the object in \eqref{eq:intreg}. Third --- the genuinely new and most delicate step
---- a concentration argument bounds the error of the EMA cross-moment estimates under
-within-regime stationarity, controlling the gap between the streaming gradient
-\eqref{eq:update} and the population gradient \eqref{eq:grad} and tying the
-moment-tracking decay $\beta$ to the regret constant. We give the first two steps in
-full and sketch the third, which we regard as the principal open technical question
-(Section~\ref{sec:discussion}).
+\begin{lemma}[Convex surrogate and gradient decomposition]\label{lem:surrogate}
+$\phi_t$ is convex, and under Assumption~\ref{ass:scm} it equals, within the active
+regime, the anchor-penalised risk $\phi_t(w)=\E_t[(y-w^\top\phi)^2]+\xi P_t(w)$ of
+\eqref{eq:bar}. The step direction $\hat g_t$ taken by Algorithm~\ref{alg:oarf}
+satisfies $\hat g_t=\nabla\phi_t(w_t)+\zeta_t$, where the error decomposes as
+$\zeta_t=M_t+b_t$ with $M_t:=-r_t\phi(x_t)-\E_t[-r\phi]$ a martingale difference
+($\E[M_t\mid\mathcal F_{t-1}]=0$) and $b_t$ the deterministic ($\mathcal F_{t-1}$%
+-measurable) error of the EMA-estimated penalty gradient relative to $\nabla(\xi P_t)$.
+\end{lemma}
+\begin{proof}
+For each fixed $\nu$, $\E_{\doop(a:=\nu)}[(y-w^\top\phi)^2]$ is a convex quadratic in
+$w$; a pointwise supremum of convex functions is convex, giving convexity of $\phi_t$.
+The stated identity is Proposition~\ref{prop:equiv} applied within the (stationary)
+active regime. For the gradient, the prediction term $-r_t\phi(x_t)$ is an unbiased
+one-sample estimate of $\tfrac12\nabla\E_t[(y-w^\top\phi)^2]=-\E_t[r\phi]$, whose
+centred part is the martingale difference $M_t$; the robustness term of \eqref{eq:update}
+substitutes the EMA moments $m^{XA}_t,(M^{AA}_t+\epsilon I)^{-1},m^{Ar}_t$ --- all
+$\mathcal F_{t-1}$-measurable --- for the population moments in $\nabla(\xi P_t)$, and
+$b_t$ is exactly that substitution error.
 \end{proof}
 
+\begin{lemma}[Inexact dynamic regret]\label{lem:ogd}
+Run projected online gradient descent with a path-length-adaptive step-size wrapper
+(Ader; \citealp{zhang2018adaptive}) on the convex losses $\phi_t$, but fed the inexact
+gradients $\hat g_t$. Then for any comparator sequence $u_{1:T}\subset\mathcal{W}$ with
+path length $P_T$,
+\[
+\sum_{t=1}^T\phi_t(w_t)-\sum_{t=1}^T\phi_t(u_t)\ \le\
+O\!\big(\sqrt{T(1+P_T)}\big)\ +\ \sum_{t=1}^T\langle \zeta_t,\,w_t-u_t\rangle ,
+\]
+where the first term is attained \emph{without} prior knowledge of $P_T$ (hence of $K$).
+\end{lemma}
+\begin{proof}
+With exact gradients, Ader attains the minimax dynamic regret
+$O(\sqrt{T(1+P_T)})$ for convex, $G$-Lipschitz losses over a radius-$D$ set, adaptively
+in $P_T$ \citep{zhang2018adaptive}; this already subsumes the single-step bound of
+\citet{zinkevich2003ogd,hazan2016oco}. Replacing the exact gradient by $\hat g_t=
+\nabla\phi_t(w_t)+\zeta_t$ adds, through the standard first-order regret telescoping,
+exactly the linear-in-error term $\sum_t\langle\zeta_t,w_t-u_t\rangle$ (convexity gives
+$\phi_t(w_t)-\phi_t(u_t)\le\langle\nabla\phi_t(w_t),w_t-u_t\rangle=\langle\hat g_t,w_t-
+u_t\rangle-\langle\zeta_t,w_t-u_t\rangle$, and the $\hat g_t$ terms are bounded by the
+exact-gradient analysis).
+\end{proof}
+
+\begin{lemma}[Gradient-error control]\label{lem:mom}
+Under Assumptions~\ref{ass:bounded}--\ref{ass:moment}, and against the (deterministic,
+by Assumption~\ref{ass:comp}) comparator that minimises \eqref{eq:intreg}:
+(i) $\E\big[\sum_t\langle M_t,w_t-u_t\rangle\big]=0$; and
+(ii) the EMA penalty-gradient error obeys $\E\|b_t\|\le c_1\sqrt{1-\beta}$ at steps
+that lie at least one window $1/(1-\beta)$ into a regime, while within $1/(1-\beta)$
+steps of each of the $K$ regime changes $\|b_t\|\le c_2$; consequently
+$\sum_t\E\|b_t\|\le c_1\,T\sqrt{1-\beta}+c_2\,K/(1-\beta)$. With \emph{oracle} moments,
+$b_t\equiv 0$.
+\end{lemma}
+\begin{proof}
+(i) $w_t$ is $\mathcal F_{t-1}$-measurable and, since the regime schedule is oblivious
+(Assumption~\ref{ass:comp}), the minimising comparator $u_t$ is a deterministic
+sequence; hence $\E[\langle M_t,w_t-u_t\rangle\mid\mathcal F_{t-1}]=\langle\E[M_t\mid
+\mathcal F_{t-1}],w_t-u_t\rangle=0$, and the claim follows by the tower rule.
+(ii) An EMA with decay $\beta$ of a stationary sequence has variance
+$\Theta(1-\beta)$ about its mean and bias decaying geometrically in the elapsed
+within-regime horizon; by Assumption~\ref{ass:bounded} the penalty gradient is a
+Lipschitz function of these moments (the $\epsilon$-ridge bounds the inverse), so its
+estimation error inherits the $\Theta(\sqrt{1-\beta})$ steady-state scale. Immediately
+after a regime change the EMA still mixes the previous regime for $O(1/(1-\beta))$
+steps, over which the bounded gradients give $\|b_t\|\le c_2$. Summing the two regimes
+of behaviour over the stream gives the stated bound; oracle moments make the
+substitution error vanish identically.
+\end{proof}
+
+\begin{theorem}[Fixed-channel interventional regret]\label{thm:main}
+Under Assumptions~\ref{ass:bounded}--\ref{ass:moment}, Algorithm~\ref{alg:oarf} with a
+fixed channel and the Ader step wrapper attains \emph{sublinear} expected interventional
+regret against any $K$-switch comparator, with no prior knowledge of $K$:
+\begin{enumerate}[leftmargin=1.6em,itemsep=1pt]
+\item[(i)] with oracle anchor second moments,
+$\ \E\big[\mathrm{IntReg}_T(\rho(\xi))\big]=O\!\big(\sqrt{T(1+K)}\big)$;
+\item[(ii)] with the EMA moment estimates of Algorithm~\ref{alg:oarf} and decay
+$1-\beta_T=T^{-2/3}$,
+$\ \E\big[\mathrm{IntReg}_T(\rho(\xi))\big]=O\!\big((1+K)\,T^{2/3}\big)$.
+\end{enumerate}
+\end{theorem}
+\begin{proof}
+Combining Lemmas~\ref{lem:surrogate}--\ref{lem:mom} and taking expectations, for the
+deterministic minimising comparator $u_{1:T}\in\mathcal{W}$ (path length $P_T\le 2DK$),
+\[
+\E\Big[\textstyle\sum_t\phi_t(w_t)\Big]-\sum_t\phi_t(u_t)\ \le\
+O\!\big(\sqrt{T(1+K)}\big)+\underbrace{\E\big[\textstyle\sum_t\langle M_t,w_t-u_t\rangle\big]}_{=0}
++\,D\sum_t\E\|b_t\| .
+\]
+With oracle moments the last term is zero, giving (i). With EMA moments,
+$D\sum_t\E\|b_t\|\le D\big(c_1T\sqrt{1-\beta}+c_2K/(1-\beta)\big)$; setting
+$1-\beta_T=T^{-2/3}$ makes this $O(T^{2/3})+O(KT^{2/3})=O((1+K)T^{2/3})$, which dominates
+the $\sqrt{T(1+K)}$ term, giving (ii). Finally, by Assumption~\ref{ass:scm} the realised
+regime is an admissible intervention, so $\E_t[\ell_t(w_t)\mid\mathcal F_{t-1}]\le
+\phi_t(w_t)$ and hence $\E[\sum_t\ell_t(w_t)]\le\E[\sum_t\phi_t(w_t)]$; since
+$\min_{u\in\mathcal{W}}\sum_t\phi_t(u)$ is the comparator in \eqref{eq:intreg}, the two
+displays give $\E[\mathrm{IntReg}_T(\rho(\xi))]$ no larger than the stated rates. Both
+are $o(T)$, so the per-round regret vanishes.
+\end{proof}
+
+\begin{remark}[Reading the two rates]\label{rem:rates}
+The gap between (i) and (ii) is the price of \emph{learning the robustness geometry
+online without changepoint detection}. A detection-and-reset estimator could drive the
+moment error down at the $O(1/\sqrt{n})$ within-regime rate and recover (i), but only by
+reintroducing exactly the triggers \OARF{} is designed to avoid; the $T^{2/3}$ rate is
+what a purely proactive, exponentially-forgetting estimator pays, and it remains
+sublinear. The deployed implementation uses a single AdaGrad instance rather than the
+Ader wrapper, which removes only the $K$-adaptivity and is what one wants in practice.
+\end{remark}
+
 \begin{remark}[What the guarantee does and does not claim]\label{rem:honesty}
-Two honest qualifications matter. First, risk-adjusted no-regret is attainable only
-under stochastic, stationary or ergodic data, not against a fully adversarial
-environment \citep{uziel2017growth}; this is exactly why $\mathcal{W}$ is
-regime-conditional rather than adversarial, and why observable regime drivers must
-enter the statement --- they define the regimes the comparator may condition on.
-Second, anchor-based methods deliver \emph{interventional robustness, not causal
-identification}: the estimand is the diluted-causal parameter, and we do not claim to
-recover a structural coefficient. The experiments are read in this light.
+Two qualifications matter. First, risk-adjusted no-regret is attainable only under
+stochastic, stationary or ergodic data, not against a fully adversarial environment
+\citep{uziel2017growth}; this is why $\mathcal{W}$ is regime-conditional rather than
+adversarial and why observable regime drivers must enter the statement --- they define
+the regimes the comparator may condition on. Second, anchor-based methods deliver
+\emph{interventional robustness, not causal identification}: the estimand is the
+diluted-causal parameter, and we do not claim to recover a structural coefficient.
 \end{remark}
 
 \section{Experimental design}\label{sec:setup}
@@ -441,7 +551,7 @@ ground-truth intervention exists and the regime structure is milder. The two tog
 are designed so that the synthetic study isolates \emph{why} the method should help
 and the real study tests \emph{whether} it does.
 
-\subsection{A controlled anchor-SCM with a measurable intervention gap}\label{sec:data-syn}
+\paragraph{A controlled anchor-SCM with a measurable intervention gap.}
 The synthetic generator (Table~\ref{tab:scm}) is built so that the difference between
 ordinary prediction and interventional robustness is not a matter of taste but a
 quantity we can read off. An exogenous anchor $A$, whose mean shifts across eight
@@ -492,7 +602,7 @@ $\sigma_X,\sigma_Y$ & predictor / target noise & $0.4,0.5$\\
 \end{tabular}
 \end{table}
 
-\subsection{The real panel and the forecasting task}\label{sec:data-real}
+\paragraph{The real panel and the forecasting task.}
 For the real study we assemble a public daily panel spanning 2010--2026
 (Table~\ref{tab:realdata}), aligned to a business-day calendar with capped
 forward-fill. The targets are the two energy commodities most exposed to the
@@ -532,7 +642,7 @@ EUA carbon & manual export (optional) & --- & optional target\\
 \end{tabular}
 \end{table}
 
-\subsection{The forecast-combination pool}\label{sec:baselines-data}
+\paragraph{The forecast-combination pool.}
 In the real study every method combines the same pool of one-step-ahead volatility
 forecasts, and the pool is chosen to be the standard one rather than anything bespoke.
 It comprises the heterogeneous-autoregressive cascade of daily, weekly and monthly
@@ -547,7 +657,7 @@ worthwhile and why this is the natural arena in which the 2026 distributionally 
 combiners were proposed. Every member of the pool is strictly causal: each forecast for
 day $t$ is computed from information available through $t-1$.
 
-\subsection{Baselines}\label{sec:baselines}
+\paragraph{Baselines.}
 We compare against eleven methods, grouped not by superficial type but by the question
 each is meant to answer about \OARF{} (Table~\ref{tab:baselines}). The \emph{floors} ---
 online gradient descent, which is literally \OARF{} with $\xi=0$; a rolling-window ridge
@@ -598,7 +708,7 @@ AnchorReg / DRIG & '21/'23 & causal (batch oracle) & anchor / environments & win
 \end{tabular}
 \end{table}
 
-\subsection{Metrics and protocol}\label{sec:metrics}
+\paragraph{Metrics and protocol.}
 We report point accuracy (overall and root MSE, and the regime-aware refinements of
 per-regime, worst-regime and post-changepoint MSE over $50$-step windows); the
 interventional robustness that is the paper's headline, namely the robustness curve
@@ -615,7 +725,7 @@ information enters any forecast.
 
 \section{Results}\label{sec:results}
 
-\subsection{Synthetic: immunisation against interventions}
+\paragraph{Synthetic: immunisation against interventions.}
 The controlled benchmark (Table~\ref{tab:syn} and Figures~\ref{fig:rolling}--\ref{fig:immun})
 delivers the paper's thesis in its clearest form, and the most informative way to read
 it is to notice that the in-distribution and the interventional rankings are almost
@@ -728,7 +838,7 @@ mean, and the dotted line is the random-subspace baseline.}
 \label{fig:channel}
 \end{figure}
 
-\subsection{Ablations}\label{sec:ablations}
+\paragraph{Ablations.}
 Table~\ref{tab:abl} and Figure~\ref{fig:abl} take the method apart one component at a
 time, and the picture that emerges is that the causal channel is doing the real work.
 With the true channel, the worst-case interventional error is $0.101$; replace it with a
@@ -783,7 +893,7 @@ alignment both improve with $q$ and are already strong at the true $q=2$ (dotted
 \label{fig:abl}
 \end{figure}
 
-\subsection{Real data: energy-volatility combination}
+\paragraph{Real data: energy-volatility combination.}
 The sixteen-year study (Table~\ref{tab:real}) asks the harder question of whether the
 mechanism survives in data we did not design, and the answer is a qualified but
 consistent yes. On both commodities \OARF{} and \OARFCD{} fall inside the Model
@@ -851,7 +961,7 @@ targeting.}
 \label{fig:equity}
 \end{figure}
 
-\subsection{Significance}
+\paragraph{Significance.}
 The two Model Confidence Set analyses are themselves informative about what \OARF{} is
 and is not for. On the synthetic benchmark the set computed on \emph{in-distribution}
 loss retains the batch and conformal methods --- rolling OLS in all eight seeds, DRIG in
@@ -890,18 +1000,19 @@ causal channel where shifts actually arrive --- and our experiments attribute \O
 advantage squarely to that difference.
 
 The honest limitations point to the next steps. The interventional-regret theorem is
-established for the fixed-channel learner and rests, at its third step, on a
-concentration argument for the EMA cross-moments under within-regime stationarity that we
-have sketched rather than proved in full; completing it, and extending the guarantee to
-the learned-channel variant whose channel drifts slowly with the data, is the principal
-open problem. Beyond it, a quantile or density head carrying \emph{interventional}
-coverage guarantees, and a frictional-allocator head with decision-regret rather than
-forecast-regret bounds, would connect the method more tightly to the decisions that
-motivate it. We introduced \OARF{}, a streaming anchor-robust forecaster that immunises
+established for the \emph{fixed}-channel learner; its EMA-moment rate of $T^{2/3}$ rests,
+through Lemma~\ref{lem:mom}, on the within-regime stationarity of
+Assumption~\ref{ass:moment}, and tightening it toward $\sqrt{T}$ without reintroducing a
+changepoint trigger, as well as extending the guarantee to the learned-channel variant
+whose channel drifts slowly with the data, is the principal open problem. Beyond it, a
+quantile or density head carrying \emph{interventional} coverage guarantees, and a
+frictional-allocator head with decision-regret rather than forecast-regret bounds, would
+connect the method more tightly to the decisions that motivate it. We introduced \OARF{}, a streaming anchor-robust forecaster that immunises
 against economic regime shifts through the causal channel they travel and that discovers
-that channel online; it enjoys an $O(\sqrt{T(1+K)})$ interventional-regret bound in the
-fixed-channel case, cuts worst-case interventional error by more than half against the
-reactive and distributionally robust state of the art on a controlled benchmark, and
+that channel online; it is provably no-regret in interventional regret in the
+fixed-channel case ($O(\sqrt{T(1+K)})$ with oracle moments, $O((1{+}K)T^{2/3})$ online),
+cuts worst-case interventional error by more than half against the reactive and
+distributionally robust state of the art on a controlled benchmark, and
 holds its own over sixteen years of energy-volatility data while offering an
 interpretable, automatically discovered view of which drivers carry the regime.
 
