@@ -24,6 +24,7 @@
 \usepackage{enumitem}
 \usepackage{algorithm}
 \usepackage{algpseudocode}
+\usepackage[section]{placeins}  % keep floats within their section
 \usepackage[hidelinks]{hyperref}
 \usepackage[numbers,sort&compress]{natbib}
 \usepackage{authblk}
@@ -576,7 +577,7 @@ hundred draws each --- spanning anchor values \emph{beyond} the training range, 
 is on this grid that every interventional number in Section~\ref{sec:results} is
 computed.
 
-\begin{table}[t]
+\begin{table}[htbp]
 \centering
 \caption{Configuration of the synthetic anchor-SCM (defaults; results average over 8
 random seeds).}
@@ -620,7 +621,7 @@ own. Regimes for the regime-aware metrics are defined, without look-ahead, as te
 of a past-only volatility-stress index, giving calm, normal and turbulent states and
 the transitions between them.
 
-\begin{table}[t]
+\begin{table}[htbp]
 \centering
 \caption{The public real-data panel. All series are free and citation-requested and are
 fetched by the released download script.}
@@ -681,7 +682,7 @@ serve as an oracle upper bound on what the online, channel-learning version can 
 match. Every method is run under the identical leak-free protocol, with
 AdaGrad-stabilised steps where applicable.
 
-\begin{table}[t]
+\begin{table}[htbp]
 \centering
 \caption{The eleven comparison methods, organised by the question each answers about
 \OARF{}. The column ``Hedges over'' names the uncertainty geometry; \OARF{} is the only
@@ -749,7 +750,7 @@ zero by \OARF{} throughout the stream but spikes for the reactive learner at eve
 regime change (Figure~\ref{fig:immun}), and the in-distribution premium this discipline
 costs is small and roughly uniform across regimes.
 
-\begin{table}[t]
+\begin{table}[htbp]
 \centering
 \caption{Synthetic anchor-SCM, mean $\pm$ sd over 8 seeds (lower is better). The final
 column, the worst-case error over the held-out intervention grid, is the headline
@@ -777,7 +778,7 @@ DRIG (batch oracle)            & $0.017\pm0.015$ & $0.022\pm0.017$ & $0.021\pm0.
 \end{tabular}
 \end{table}
 
-\begin{figure}[t]
+\begin{figure}[htbp]
 \centering
 \includegraphics[width=0.86\textwidth]{fig1_rolling_error.png}
 \caption{Rolling squared error across regimes on a representative seed (changepoints
@@ -786,7 +787,7 @@ break; \OARF{} stays comparatively flat.}
 \label{fig:rolling}
 \end{figure}
 
-\begin{figure}[t]
+\begin{figure}[htbp]
 \centering
 \includegraphics[width=0.92\textwidth]{fig2_bar_metrics.png}
 \caption{Overall, post-changepoint and worst-case interventional MSE on the synthetic
@@ -796,7 +797,7 @@ nearly mirror images.}
 \label{fig:bars}
 \end{figure}
 
-\begin{figure}[t]
+\begin{figure}[htbp]
 \begin{subfigure}{0.5\textwidth}\centering
 \includegraphics[width=\linewidth]{fig3_robustness_curve.png}
 \caption{Robustness curve: MSE against intervention magnitude $\|\nu\|$.}\label{fig:robust}
@@ -811,7 +812,7 @@ learner continuously from the online-gradient-descent corner to full immunisatio
 \label{fig:robust-pareto}
 \end{figure}
 
-\begin{figure}[t]
+\begin{figure}[htbp]
 \centering
 \includegraphics[width=0.78\textwidth]{fig5_immunization.png}
 \caption{The mechanism, made visible. The smoothed anchor--residual correlation
@@ -829,7 +830,7 @@ $0.209$ for online gradient descent) without ever being told which drivers matte
 which is the property that distinguishes \OARF{} from simply running a known batch
 estimator online.
 
-\begin{figure}[t]
+\begin{figure}[htbp]
 \centering
 \includegraphics[width=0.72\textwidth]{fig6_learned_channel.png}
 \caption{Online channel discovery: alignment of the learned channel $B_t$ to the true
@@ -861,7 +862,7 @@ and both robustness and alignment improve gently from $q=1$ to $q=4$; and the me
 broadly insensitive to the EMA decay $\beta$ across $[0.90,0.995]$, with the mild
 optimum at the value we use.
 
-\begin{table}[t]
+\begin{table}[htbp]
 \centering
 \caption{Component ablations on the synthetic benchmark (mean over 8 seeds, $\xi=6$
 unless noted). Removing the causal channel, not the optimisation machinery, is what
@@ -883,7 +884,7 @@ learned channel (\OARFCD{}, alignment $0.87$) & $0.029$ & $0.185$\\
 \end{tabular}
 \end{table}
 
-\begin{figure}[t]
+\begin{figure}[htbp]
 \centering
 \includegraphics[width=0.99\textwidth]{fig11_ablations.png}
 \caption{Ablations. (a) Sensitivity to the EMA decay $\beta$. (b) Component knock-outs by
@@ -916,7 +917,7 @@ sample the risk-targeting Sharpe ratios are low and statistically indistinguisha
 across methods, so we present the decision-economic results for completeness rather than
 as a headline.
 
-\begin{table}[t]
+\begin{table}[htbp]
 \centering
 \caption{Real energy log-realised-variance combination, 2010--2026 evaluation window
 (lower is better). Every listed method lies within the 10\% Model Confidence Set;
@@ -944,7 +945,7 @@ AnchorReg          & $0.2183$ & $0.2195$ & $0.2345$ & --     & $0.2907$ & $0.394
 \end{tabular}
 \end{table}
 
-\begin{figure}[t]
+\begin{figure}[htbp]
 \centering
 \includegraphics[width=0.97\textwidth]{fig9_real_DCOILBRENTEU.png}
 \caption{Brent: rolling squared error with the volatility-regime overlay (left) and
@@ -952,7 +953,7 @@ worst-regime MSE by method (right).}
 \label{fig:real}
 \end{figure}
 
-\begin{figure}[t]
+\begin{figure}[htbp]
 \centering
 \includegraphics[width=0.72\textwidth]{fig10_equity_DCOILBRENTEU.png}
 \caption{Brent: cumulative volatility-timing profit and loss. The differences across
@@ -974,7 +975,7 @@ real-data evidence off the regime-robustness margins of Table~\ref{tab:real} rat
 off mean accuracy. The pairwise Diebold--Mariano statistics in Figure~\ref{fig:dm}
 corroborate the synthetic ordering.
 
-\begin{figure}[t]
+\begin{figure}[htbp]
 \centering
 \includegraphics[width=0.62\textwidth]{fig8_dm_heatmap.png}
 \caption{Pairwise Diebold--Mariano statistics on the synthetic benchmark; a negative
