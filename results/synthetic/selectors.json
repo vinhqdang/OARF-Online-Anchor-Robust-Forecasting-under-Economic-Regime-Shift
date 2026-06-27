@@ -1,0 +1,38 @@
+{
+  "config": {
+    "seeds": 8,
+    "T": 8000
+  },
+  "selectors": {
+    "true": {
+      "align_mean": 1.0,
+      "align_sd": 1.1775693440128312e-16,
+      "worst_do_median": 0.07020022031684156,
+      "worst_do_mean": 0.10033997595035879
+    },
+    "block-mean": {
+      "align_mean": 0.4234452611050422,
+      "align_sd": 0.30210543607330365,
+      "worst_do_median": 0.10099992548814946,
+      "worst_do_mean": 0.2165063900594628
+    },
+    "residual-corr": {
+      "align_mean": 0.3657612140396692,
+      "align_sd": 0.19120772798228405,
+      "worst_do_median": 0.09336100256954824,
+      "worst_do_mean": 0.19430627405312778
+    },
+    "stationary-PCA": {
+      "align_mean": 0.30880902763456264,
+      "align_sd": 0.22660916452179866,
+      "worst_do_median": 0.23640613336431526,
+      "worst_do_mean": 0.23255251676906158
+    },
+    "random": {
+      "align_mean": 0.43053724418207284,
+      "align_sd": 0.13150323089016866,
+      "worst_do_median": 0.11528959096562222,
+      "worst_do_mean": 0.2439198597219081
+    }
+  }
+}
