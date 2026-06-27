@@ -243,6 +243,96 @@ class OGD(OARF):
         super().__init__(d, p, xi=0.0, eta=eta, lam2=lam2, name="OGD", **kw)
 
 
+class OARFAder(OARF):
+    r"""Ader-wrapped OARF: the path-length-adaptive variant the theorem analyses.
+
+    The deployed model (class :class:`OARF`) takes a single AdaGrad step on the
+    anchor-robust surrogate gradient.  The *Theorem* instead assumes the Ader step
+    wrapper \citep{zhang2018adaptive}, which attains dynamic regret $O(\sqrt{T(1+P_T)})$
+    against a path-length-$P_T$ comparator without knowing $P_T$.  This class
+    implements that wrapper so we can compare the two empirically:
+
+    * a pool of ``K`` base experts, each a copy of the linear read-out updated by
+      gradient descent on the *same* anchor-robust surrogate gradient but with its
+      own step size ``eta_i`` drawn from a geometric grid (the Ader expert ladder);
+    * a Hedge meta-learner over the experts whose weights track the
+      currently-best step size as the regime path bends.
+
+    The anchor-robustness statistics (the EMA cross-moments) are a property of the
+    stream and are shared across experts exactly as in :class:`OARF`; only the
+    per-expert *fit* residual differs.  The read-out ``self.w`` is kept synced to
+    the meta-combination so prediction and frozen interventional evaluation are
+    unchanged.
+    """
+
+    def __init__(self, d, p, B=None, q=2, xi=1.0, beta=0.98, eps=1e-3,
+                 lam2=1e-4, eta_grid=None, meta_eta=None, name="OARF-Ader", **kw):
+        # base eta is unused (adagrad disabled); experts carry their own steps
+        super().__init__(d, p, B=B, q=q, xi=xi, eta=0.1, beta=beta, eps=eps,
+                         lam2=lam2, adagrad=False, name=name, **kw)
+        if eta_grid is None:                       # geometric step ladder
+            eta_grid = [0.0125 * (2.0 ** k) for k in range(5)]  # 0.0125..0.2
+        self.eta_grid = list(eta_grid)
+        self.K = len(self.eta_grid)
+        self.W = np.zeros((self.K, d + 1))         # expert weight vectors
+        self.p_meta = np.full(self.K, 1.0 / self.K)
+        # Ader meta step: ~sqrt(8 ln K / T) scale; modest constant works online
+        self.meta_eta = meta_eta if meta_eta is not None else 0.5
+        self._Dcap = 20.0          # projected-OGD ball radius (Assumption: ||w|| <= D)
+
+    def update(self, x, z, y):
+        xs, zs, phi, _ = self._cache
+        self._cache_y = float(y)
+        a = self.B.T @ zs
+
+        # shared EMA moments (same data-statistics as OARF), driven by the
+        # meta-combined residual so the anchor coupling is a single estimate
+        r_comb = float(y - self.w @ phi)
+        mx = self.mean_x.update(xs)
+        ma = self.mean_a.update(a)
+        mr = float(self.mean_r.update([r_comb])[0])
+        if self.center:
+            xt, at, rt = xs - mx, a - ma, r_comb - mr
+        else:
+            xt, at, rt = xs, a, r_comb
+        self.m_Xr.update(xt * rt)
+        m_XA = self.m_XA.update(np.outer(xt, at))
+        M_AA = self.M_AA.update(np.outer(at, at))
+        m_Ar = self.m_Ar.update(at * rt)
+        Minv_Ar = np.linalg.solve(M_AA + self.eps * np.eye(self.q), m_Ar)
+        anchor_term = -2.0 * self.xi * (m_XA @ Minv_Ar)        # shared (coef block)
+
+        # per-expert GD step + Hedge meta-loss, with a finite-guard so a diverging
+        # large-step expert is demoted (and reset) rather than poisoning the mix
+        losses = np.empty(self.K)
+        for i in range(self.K):
+            wi = self.W[i]
+            ri = float(y - wi @ phi)
+            grad = -ri * phi
+            grad[1:] += anchor_term + self.lam2 * wi[1:]
+            wnew = wi - self.eta_grid[i] * grad
+            # project onto the bounded comparator ball (Assumption: ||w|| <= D),
+            # which is the projected-OGD the analysis assumes and which keeps a
+            # large-step expert from diverging instead of merely being down-weighted
+            nrm = np.linalg.norm(wnew)
+            if nrm > self._Dcap:
+                wnew = wnew * (self._Dcap / nrm)
+            if not np.all(np.isfinite(wnew)):
+                wnew = self.w.copy()
+            self.W[i] = wnew
+            losses[i] = ri * ri if np.isfinite(ri) else 1e12
+        # Hedge update (normalised, shift-invariant)
+        self.p_meta *= np.exp(-self.meta_eta * (losses - losses.min()))
+        self.p_meta = np.clip(self.p_meta, 1e-12, None)
+        self.p_meta /= self.p_meta.sum()
+        self.w = self.p_meta @ self.W                          # meta-combination
+
+        if self.learn_channel:
+            self._update_channel(zs, phi)
+        self._absorb(x, z)
+        self._step += 1
+
+
 # --------------------------------------------------------------------------- #
 #  Rolling-OLS floor                                                          #
 # --------------------------------------------------------------------------- #

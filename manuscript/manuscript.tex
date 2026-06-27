@@ -100,7 +100,7 @@ evidence on when anchor-based proactive robustness helps or fails.
 
 \vspace{0.6em}
 \noindent\textbf{Keywords:} online learning; distribution shift; anchor
-regression; causal robustness; forecast combination; realised volatility;
+regression; anchor robustness; interventional robustness; forecast combination; realised volatility;
 regime change; distributionally robust optimisation.
 
 \vspace{0.3em}
@@ -124,11 +124,14 @@ behind --- the alarm can only fire after the loss has already risen --- so it pa
 a re-adaptation cost at every break; and it treats the \emph{symptom} of a shift,
 a deterioration in fit, as if it were the \emph{cause}.
 
-We take a different view. In many economic settings the cause of a shift is not
-hidden: it is an \emph{observable channel} of regime drivers whose own changing
-distribution is precisely what perturbs the forecasting environment. When
-geopolitical risk spikes or policy uncertainty jumps, the joint distribution of
-prices, volatilities and their predictors moves with it. If a forecaster's
+We take a different view. In many economic settings the shift travels through an
+\emph{observable channel} of regime drivers --- or at least through observable
+co-moving proxies for those drivers --- whose own changing distribution is closely
+associated with what perturbs the forecasting environment. When geopolitical risk
+spikes or policy uncertainty jumps, the joint distribution of prices, volatilities and
+their predictors tends to move with it; we treat these series as an observable shift
+channel rather than asserting that they are the structural cause, reserving the strict
+causal reading for the synthetic SCM where it holds by construction. If a forecaster's
 residual can be made \emph{invariant} to that channel --- if the part of its error
 that co-moves with the drivers is held at zero --- then the forecaster is
 protected against shifts in the channel's distribution \emph{before} they happen,
@@ -210,7 +213,9 @@ the principle to distributional robustness through invariant gradients. What all
 of these share --- and what we must overcome for a streaming deployment --- is that
 they are batch procedures that take the environment or anchor variable as given.
 \OARF{} keeps the worst-case-intervention semantics of anchor regression but makes
-the estimator online and, crucially, learns the anchor channel from data.
+the estimator online; we additionally study a heuristic add-on that attempts to
+estimate the anchor channel from data, while treating the analyst-supplied channel as
+the primary mode.
 
 \paragraph{Reactive online adaptation.} A second, very active line treats
 distribution shift as something to detect and then accommodate. Adaptive conformal
@@ -223,8 +228,9 @@ takes a Fisher-preconditioned natural-gradient correction; WATCH/WCTM
 tolerate benign covariate shift while still flagging harmful concept shift, and
 adapts the prediction interval accordingly. These methods are the natural
 incumbents against which a proactive method must be judged --- and the comparison
-is precisely the point, since \OARF{} aims to make the trigger unnecessary by
-removing the channel's influence before it can raise the loss.
+is precisely the point, since \OARF{} tests whether, when an informative anchor is
+available, part of the need for reactive triggering can be reduced by removing the
+channel's influence before it can raise the loss.
 
 \paragraph{Distributionally robust forecasting (2026).} The closest competitors are
 recent methods that, like \OARF{}, optimise an explicitly worst-case objective.
@@ -559,7 +565,13 @@ analyse. AdaGrad drops the $K$-adaptivity of the Ader wrapper (which is what mak
 the bound hold for an unknown number of switches) while keeping per-coordinate
 adaptive steps, and we use it because it is simpler, parameter-light and more robust
 on heavy-tailed streams; the price is that the worst-case $K$-switch guarantee is
-established only for the Ader variant, not for the deployed one.
+established only for the Ader variant, not for the deployed one. We checked that this
+substitution does not change the empirical story: in a pilot on the synthetic benchmark
+(Appendix~\ref{app:ader}, $12$ seeds) the Ader-wrapped and AdaGrad step rules give
+qualitatively similar results --- both cut the worst-case interventional error far
+below OGD, their per-seed worst-case errors are strongly rank-correlated (Spearman
+$\rho=0.80$), and AdaGrad is in fact slightly more accurate and stable --- so we report
+AdaGrad as a faithful, simpler stand-in.
 \end{remark}
 
 \begin{remark}[What the guarantee does and does not claim]\label{rem:honesty}
@@ -729,11 +741,13 @@ method whose set is an anisotropic \emph{anchor-shaped} ellipsoid, and the only 
 (non-triggered) robust learner.}
 \label{tab:baselines}
 \small
+\setlength{\tabcolsep}{4pt}
+\resizebox{\linewidth}{!}{%
 \begin{tabular}{lllll}
 \toprule
 Method & Year & Family & Hedges over & Posture\\
 \midrule
-\textbf{\OARF{}/\OARFCD{}} & ours & anchor-robust OCO & anchor ellipsoid $\E[aa^\top]$ & proactive\\
+\textbf{\OARF{}} (+ \OARFCD{}, expl.) & ours & anchor-robust OCO & anchor ellipsoid $\E[aa^\top]$ & proactive\\
 OGD & 2003 & basic baseline & --- & ---\\
 Rolling-OLS & --- & basic baseline & --- & windowed\\
 ACI & 2021 & conformal & coverage level & reactive\\
@@ -745,7 +759,7 @@ W-DRO-OL & 2026 & robust online learning & Wasserstein ball & primal--dual\\
 CostACI & 2026 & cost-aware conformal & coverage level & reactive\\
 AnchorReg / DRIG & '21/'23 & causal (batch) & anchor / environments & windowed\\
 \bottomrule
-\end{tabular}
+\end{tabular}}
 \end{table}
 
 \paragraph{How each method produces a forecast.} To keep the comparison even, every
@@ -866,8 +880,8 @@ the text.}
 \toprule
 Method & overall MSE & worst-regime MSE & post-cp MSE & worst-$\doop(A)$ MSE\\
 \midrule
-\textbf{\OARF{}} (fixed channel)        & $0.019\,[0.010,0.043]$ & $0.030$ & $0.021$ & $\mathbf{0.041\,[0.015,0.071]}$\\
-\textbf{\OARFCD{}} (learned $B$) & $0.018\,[0.010,0.040]$ & $0.029$ & $0.021$ & $0.049\,[0.020,0.124]$\\
+\textbf{\OARF{}} (main, fixed channel)        & $0.019\,[0.010,0.043]$ & $0.030$ & $0.021$ & $\mathbf{0.041\,[0.015,0.071]}$\\
+\OARFCD{} (\emph{exploratory}, learned $B$) & $0.018\,[0.010,0.040]$ & $0.029$ & $0.021$ & $0.049\,[0.020,0.124]$\\
 OGD                            & $0.012\,[0.008,0.033]$ & $0.022$ & $0.018$ & $0.095\,[0.031,0.220]$\\
 Rolling-OLS                    & $0.010\,[0.005,0.030]$ & $0.015$ & $0.012$ & $0.083\,[0.025,0.278]$\\
 ACI                            & $0.011\,[0.006,0.030]$ & $0.015$ & $0.013$ & $0.071\,[0.022,0.164]$\\
@@ -1143,7 +1157,7 @@ back to OGD/ACI rather than to a robust update built on an untrusted channel.
 \begin{center}
 \fbox{\begin{minipage}{0.92\linewidth}
 \small
-\textbf{Practical-use checklist.}\\[2pt]
+\textbf{Pre-deployment checklist for \OARF{}.}\\[2pt]
 \emph{Use fixed-channel \OARF{} when:} the anchor has a domain justification; the
 anchor--residual correlation is non-trivial and stable over the warm-up; a warm-up
 stress test shows anchoring improves validation worst-regime loss; and random-channel
@@ -1165,9 +1179,10 @@ MCS $p$-value of $1.00$, and excludes only M-FISHER ($p=0.008$ on Brent); the
 Expected-Shortfall combiner is the next weakest but is retained ($p=0.22$ on Brent).
 Because the surviving methods are statistically indistinguishable, the small numerical
 differences in Table~\ref{tab:real} carry no inferential weight and we do not build any
-claim on them. The strongest defensible statement is therefore: \emph{\OARF{} is not
-dominated in real daily energy variance-proxy forecasting, but the public daily data do
-not provide statistically decisive evidence of superior performance for any method,
+claim on them. The strongest defensible statement is therefore: \emph{on real daily
+energy variance-proxy forecasting \OARF{} is statistically indistinguishable from the
+strongest baselines and broadly competitive across metrics, but the public daily data
+do not provide statistically decisive evidence of superior performance for any method,
 \OARF{} included.} The most likely reason is that real energy variance has weaker,
 noisier driver--residual coupling than the controlled SCM --- precisely the regime in
 which the stress tests above predict the anchor advantage shrinks toward zero, so a
@@ -1175,7 +1190,11 @@ null result here is consistent with, rather than contrary to, our mechanism. The
 conformal head's coverage is near nominal ($0.90$). A decision-economic vol-timing
 check is deferred to the appendix: over this sample the risk-targeting Sharpe ratios
 are low and statistically indistinguishable across methods, so it too carries no
-evidential weight.
+evidential weight. An event study around the COVID-19 crash and the 2022 energy shock
+(Appendix~\ref{app:events}) tells the same story at the level of dated episodes:
+\OARF{} holds the anchor--residual correlation below OGD's in every window, but the
+loss advantage is present in only one of four event/commodity windows --- the anchor
+mechanism is active yet too weakly coupled to deliver a dependable edge.
 
 \begin{table}[htbp]
 \centering
@@ -1301,6 +1320,12 @@ commodity-specific implied-volatility data, and event-triggered deployment monit
 Methodologically, the lasting contributions are a streaming anchor-regression update
 with a fixed-channel guarantee, interventional regret as an evaluation lens, and a
 careful empirical account of when anchor-based proactive robustness helps or fails.
+\emph{What to cite this paper for:} the main reason to use or cite \OARF{} is not that
+it dominates all online forecasters --- it does not --- but that it provides (i) a
+principled, leak-free streaming form of anchor regression with a fixed-anchor
+interventional-regret guarantee, (ii) an interventional-robustness evaluation protocol
+for online forecasting, and (iii) a diagnostic study, with a pre-deployment checklist,
+for deciding whether proactive anchor robustness is appropriate for a given problem.
 
 \paragraph{Open theoretical question.} The fixed-channel theorem's EMA-moment rate of
 $T^{2/3}$ rests, through Lemma~\ref{lem:mom}, on within-regime stationarity
@@ -1452,6 +1477,71 @@ DRIG & invariant-gradient (batch) & windowed two-env.\ fit & P & R & (env)\\
 \bottomrule
 \end{tabular}
 \end{table}
+
+\section{Ader-wrapped versus AdaGrad OARF}\label{app:ader}
+The interventional-regret theorem (Theorem~\ref{thm:main}) is stated for the
+path-length-adaptive Ader step wrapper \citep{zhang2018adaptive}, whereas the deployed
+model takes a single AdaGrad step. To confirm that this simplification does not change
+the empirical behaviour, we implemented the Ader variant --- a pool of five
+gradient-descent experts on the \emph{same} anchor-robust surrogate gradient with a
+geometric step-size ladder, combined by a Hedge meta-learner, each expert projected
+onto the comparator ball --- and compared it with the deployed AdaGrad model on the
+controlled anchor-SCM (true fixed channel, $\xi=6$, $12$ seeds). Table~\ref{tab:ader}
+reports the result. Both step rules deliver the interventional-robustness benefit ---
+each cuts the worst-case $\doop(A)$ error to roughly a third of the no-anchor OGD floor
+--- and their per-seed worst-case errors are strongly rank-correlated (Spearman
+$\rho=0.80$). AdaGrad is in fact slightly more accurate and lower-variance here, which,
+together with its being parameter-light, is why we deploy it; the Ader wrapper is the
+object the theorem analyses. The qualitative ranking is unchanged by the substitution.
+
+\begin{table}[htbp]
+\centering
+\caption{Ader-wrapped versus AdaGrad \OARF{} on the synthetic anchor-SCM ($12$ seeds,
+true fixed channel, $\xi=6$; median with $[\,q_{25},q_{75}\,]$). Both attain similar
+interventional robustness, far below the OGD floor; their per-seed worst-case errors
+are rank-correlated at Spearman $\rho=0.80$.}
+\label{tab:ader}
+\small
+\begin{tabular}{lcc}
+\toprule
+Step rule & in-regime MSE & worst-$\doop(A)$ MSE\\
+\midrule
+AdaGrad (deployed) & $0.028$ & $0.052\,[0.030,0.114]$\\
+Ader (analysed)    & $0.030$ & $0.073\,[0.026,0.142]$\\
+\midrule
+OGD ($\xi=0$, reference) & $0.019$ & $0.143\,[0.065,0.353]$\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{Event study: COVID-19 and the 2022 energy shock}\label{app:events}
+The regime-tercile analysis in the main text is aggregate; here we look at two dated
+episodes. We run fixed-anchor \OARF{} ($\xi=1.5$) and the no-anchor OGD floor on the
+real combination stream and, within each event window, plot the cumulative squared-loss
+gap (\OARF{} minus OGD; negative means \OARF{} is ahead) and the smoothed
+anchor--residual correlation $|\mathrm{corr}(a_t,r_t)|$ for both
+(Figure~\ref{fig:events}). The diagnostic behaves as the mechanism predicts in one
+respect and disappoints in another, and we report both. In \emph{every} window \OARF{}
+holds the anchor--residual correlation visibly below OGD's, confirming that the update
+does what it is designed to do even on real data. But this does \emph{not} translate
+into a consistent loss advantage: \OARF{} is ahead during the COVID-19 window on Brent
+(cumulative squared-loss gap $-0.27$) yet behind in the other three window/commodity
+combinations (gaps of $+0.30$ to $+1.58$). This is the same message as the
+Model-Confidence-Set result --- on this public daily data the anchor mechanism is
+active but too weakly coupled to the target to yield a dependable forecasting edge ---
+made concrete around recognisable events. We include the study because it is honest and
+illustrative, not because it demonstrates superiority.
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.96\textwidth]{fig15_events_DCOILBRENTEU.png}
+\caption{Brent event windows. Top: cumulative squared-loss gap, \OARF{} minus OGD
+(shaded blue where \OARF{} leads, orange where it trails). Bottom: the smoothed
+anchor--residual correlation, which \OARF{} holds below OGD in both windows. \OARF{}
+leads during the 2020 COVID-19 crash but trails during the 2022 energy shock,
+consistent with the statistically insignificant aggregate result.}
+\label{fig:events}
+\end{figure}
 
 \small
 \bibliographystyle{plainnat}
