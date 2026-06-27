@@ -216,3 +216,24 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# ---- OARF project ----
+# Downloaded public data (regenerate with download_data.py)
+data/
+# LaTeX build artefacts (keep the .pdf, .tex, .bib)
+manuscript/*.aux
+manuscript/*.log
+manuscript/*.bbl
+manuscript/*.blg
+manuscript/*.out
+manuscript/*.toc
+manuscript/*.fls
+manuscript/*.fdb_latexmk
+manuscript/b1.log
+manuscript/b2.log
+manuscript/b3.log
+manuscript/final.log
+manuscript/build*.log
+manuscript/bib.log
+# experiment run logs
+results/**/run.log
