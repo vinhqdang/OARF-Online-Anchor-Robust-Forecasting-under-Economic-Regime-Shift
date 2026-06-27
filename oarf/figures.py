@@ -330,17 +330,17 @@ def fig11_ablations(abl):
     qs = sorted(int(k) for k in abl["channel_q"])
     wq = [abl["channel_q"][str(q)]["worst_do_MSE"]["mean"] for q in qs]
     aq = [abl["channel_q"][str(q)]["alignment"]["mean"] for q in qs]
-    ax.plot(qs, wq, color=_c("OARF"), marker="o", lw=1.6,
-            label="worst-$\\mathrm{do}(A)$ MSE")
+    ax.axvline(2, color="k", ls=":", lw=0.7, alpha=0.4)   # true q (no legend)
+    l1, = ax.plot(qs, wq, color=_c("OARF"), marker="o", lw=1.6,
+                  label="worst-$\\mathrm{do}(A)$ MSE")
     ax.set_xlabel(r"discovered channel dim $q$"); ax.set_ylabel("worst-do MSE")
     ax.set_title("(c) Channel dimension"); ax.set_xticks(qs)
     ax2 = ax.twinx()
-    ax2.plot(qs, aq, color="#2ca02c", marker="^", lw=1.2, ls="--",
-             label="subspace alignment")
+    l2, = ax2.plot(qs, aq, color="#2ca02c", marker="^", lw=1.2, ls="--",
+                   label="subspace alignment")
     ax2.set_ylabel("alignment to truth", color="#2ca02c"); ax2.set_ylim(0, 1)
-    ax.axvline(2, color="k", ls=":", lw=0.7, alpha=0.4)
-    lines = ax.get_lines() + ax2.get_lines()
-    ax.legend(lines, [l.get_label() for l in lines], fontsize=7, loc="center right")
+    ax.legend([l1, l2], [l1.get_label(), l2.get_label()], fontsize=7,
+              loc="center right")
     _save(fig, "fig11_ablations")
 
 
