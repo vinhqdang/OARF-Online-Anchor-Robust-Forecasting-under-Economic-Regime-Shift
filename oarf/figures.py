@@ -426,6 +426,44 @@ def fig13_real_dm(real, target):
     _save(fig, f"fig13_dm_{target}")
 
 
+def fig15_events(target):
+    """Fig. — event study: cumulative loss gap and anchor--residual correlation."""
+    path = os.path.join(REAL, f"events_{target}.json")
+    if not os.path.exists(path):
+        return
+    ev = _load(path)["windows"]
+    labels = list(ev.keys())
+    if not labels:
+        return
+    n = len(labels)
+    fig, axes = plt.subplots(2, n, figsize=(5.4 * n, 6.2), squeeze=False)
+    for j, lab in enumerate(labels):
+        w = ev[lab]
+        x = np.arange(len(w["dates"]))
+        # top: cumulative squared-loss difference (OARF - OGD); <0 means OARF better
+        ax = axes[0][j]
+        diff = np.array(w["cum_diff_OARF_minus_OGD"])
+        ax.plot(x, diff, color=_c("OARF"), lw=1.8)
+        ax.axhline(0, color="k", lw=0.7, ls=":")
+        ax.fill_between(x, diff, 0, where=diff <= 0, color=_c("OARF"), alpha=0.18)
+        ax.fill_between(x, diff, 0, where=diff > 0, color=_c("OGD"), alpha=0.18)
+        ax.set_title(f"{lab}\ncum. sq-loss, OARF $-$ OGD ($<0$: OARF better)", fontsize=9)
+        ax.set_ylabel("cumulative $\\Delta$ sq-loss")
+        # bottom: anchor-residual correlation for both
+        ax2 = axes[1][j]
+        ax2.plot(x, w["corr_OGD"], color=_c("OGD"), lw=1.3, label="OGD ($\\xi=0$)")
+        ax2.plot(x, w["corr_OARF"], color=_c("OARF"), lw=1.6, label="OARF ($\\xi=1.5$)")
+        ax2.set_ylabel(r"$|\mathrm{corr}(a_t,r_t)|$ (EMA)")
+        ax2.set_xlabel("trading day within window")
+        ax2.legend(fontsize=7)
+        step = max(1, len(x) // 5)
+        for a in (ax, ax2):
+            a.set_xticks(x[::step])
+            a.set_xticklabels([w["dates"][k][:7] for k in x[::step]], fontsize=7, rotation=0)
+    fig.suptitle(f"{target}: event-window diagnostics", fontsize=11)
+    _save(fig, f"fig15_events_{target}")
+
+
 def main():
     syn = _load(os.path.join(SYN, "metrics.json"))
     syn_detail = _load(os.path.join(SYN, "seed0_detail.json"))
@@ -455,6 +493,7 @@ def main():
                 fig9_real_regime(_load(dpath), real, tgt)
             fig10_equity(real, tgt)
             fig13_real_dm(real, tgt)
+            fig15_events(tgt)
 
 
 if __name__ == "__main__":
