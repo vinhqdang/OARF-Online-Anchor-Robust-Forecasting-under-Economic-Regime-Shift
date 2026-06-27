@@ -106,8 +106,11 @@ def aggregate(seed_results):
             vals = [sr["rows"][nm].get(mt) for sr in seed_results]
             vals = [v for v in vals if v is not None and np.isfinite(v)]
             if vals:
-                agg[nm][mt] = {"mean": float(np.mean(vals)),
-                               "sd": float(np.std(vals))}
+                v = np.array(vals, float)
+                agg[nm][mt] = {"mean": float(v.mean()), "sd": float(v.std()),
+                               "median": float(np.median(v)),
+                               "q25": float(np.percentile(v, 25)),
+                               "q75": float(np.percentile(v, 75))}
         ca = [sr["rows"][nm].get("channel_alignment") for sr in seed_results
               if "channel_alignment" in sr["rows"].get(nm, {})]
         if ca:

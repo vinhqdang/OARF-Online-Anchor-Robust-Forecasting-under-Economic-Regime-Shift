@@ -177,7 +177,7 @@ def fig5_immunization(seed=0, T=8000):
         ax.axvline(c, color="k", ls=":", lw=0.5, alpha=0.3)
     ax.set_xlabel("time step $t$")
     ax.set_ylabel(r"$|\mathrm{corr}(a_t, r_t)|$ (EMA)")
-    ax.set_title("Immunisation: OARF drives the anchor--residual correlation to zero")
+    ax.set_title("OARF drives the anchor--residual correlation toward zero")
     ax.legend()
     _save(fig, "fig5_immunization")
 
@@ -215,6 +215,46 @@ def fig6_learned_channel(syn_perseed):
     ax.set_title("Online channel discovery (Sec 2.3): recovery over time")
     ax.legend()
     _save(fig, "fig6_learned_channel")
+
+
+def fig14_alignment_scatter(syn_perseed):
+    """Fig. — per-seed alignment vs interventional robustness for the learned channel.
+
+    Each point is one seed: x = final subspace alignment of OARF-CD's discovered
+    channel, y = its worst-case do(A) MSE (log scale). Horizontal references mark the
+    fixed-channel OARF and OGD medians. The plot makes the heavy tail visible: the
+    median is competitive but low-alignment seeds drive the mean far above it.
+    """
+    al, wdo = [], []
+    for sr in syn_perseed:
+        cd = sr["rows"].get("OARF-CD", {})
+        a = cd.get("channel_alignment")
+        w = cd.get("worst_do_MSE")
+        if a is not None and w is not None and np.isfinite(w):
+            al.append(a); wdo.append(w)
+    al = np.array(al); wdo = np.array(wdo)
+    # fixed-channel OARF and OGD per-seed worst-do for reference medians
+    oarf = np.array([sr["rows"]["OARF"]["worst_do_MSE"] for sr in syn_perseed
+                     if np.isfinite(sr["rows"]["OARF"]["worst_do_MSE"])])
+    ogd = np.array([sr["rows"]["OGD"]["worst_do_MSE"] for sr in syn_perseed
+                    if np.isfinite(sr["rows"]["OGD"]["worst_do_MSE"])])
+    fig, ax = plt.subplots(figsize=(6.4, 4.0))
+    ax.scatter(al, wdo, s=34, color=_c("OARF-CD"), alpha=0.7,
+               edgecolor="k", linewidth=0.4, zorder=3, label="OARF-CD (per seed)")
+    ax.axhline(np.median(wdo), color=_c("OARF-CD"), ls="-", lw=1.6,
+               label=f"OARF-CD median ({np.median(wdo):.3f})")
+    ax.axhline(np.mean(wdo), color=_c("OARF-CD"), ls=":", lw=1.6,
+               label=f"OARF-CD mean ({np.mean(wdo):.3f})")
+    ax.axhline(np.median(oarf), color=_c("OARF"), ls="--", lw=1.4,
+               label=f"OARF fixed-channel median ({np.median(oarf):.3f})")
+    ax.axhline(np.median(ogd), color="k", ls="-.", lw=1.0,
+               label=f"OGD median ({np.median(ogd):.3f})")
+    ax.set_yscale("log")
+    ax.set_xlabel("final subspace alignment to true channel")
+    ax.set_ylabel("worst-case $do(A)$ MSE (log scale)")
+    ax.set_title("Learned channel: alignment vs robustness, per seed")
+    ax.legend(fontsize=7, loc="upper right")
+    _save(fig, "fig14_alignment_scatter")
 
 
 def fig7_per_regime_heatmap(syn_perseed):
@@ -395,6 +435,7 @@ def main():
     fig4_pareto({int(k): v for k, v in syn["pareto"].items()})
     fig5_immunization()
     fig6_learned_channel(syn["per_seed"])
+    fig14_alignment_scatter(syn["per_seed"])
     fig7_per_regime_heatmap(syn["per_seed"])
     fig8_dm_heatmap(syn["per_seed"])
 
