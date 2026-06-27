@@ -344,6 +344,48 @@ def fig11_ablations(abl):
     _save(fig, "fig11_ablations")
 
 
+def fig12_stress(st):
+    """Fig. 12 — graceful degradation under noisy / misspecified anchors."""
+    fig, axes = plt.subplots(1, 2, figsize=(11, 3.6))
+    # (a) anchor observation noise
+    ax = axes[0]
+    nl = [float(x) for x in st["noise_levels"]]
+    for nm, col in [("OARF", _c("OARF")), ("OARF-CD", _c("OARF-CD"))]:
+        m = [st["noise"][str(x)][nm]["mean"] for x in nl]
+        ax.plot(nl, m, marker="o", lw=1.6, color=col, label=nm)
+    ogd = [st["noise"][str(x)]["OGD"]["mean"] for x in nl]
+    ax.plot(nl, ogd, ls="--", lw=1.3, color=_c("OGD"), label="OGD (no anchor)")
+    ax.set_xlabel(r"anchor observation noise (multiples of $\mathrm{sd}(z)$)")
+    ax.set_ylabel(r"worst-$\mathrm{do}(A)$ MSE")
+    ax.set_title("(a) Noisy anchor"); ax.legend()
+    # (b) channel misspecification angle (alignment = cos theta)
+    ax = axes[1]
+    ang = [int(a) for a in st["angles_deg"]]
+    al = [np.cos(np.deg2rad(a)) for a in ang]
+    m = [st["angle"][str(a)]["OARF"]["mean"] for a in ang]
+    ogd = [st["angle"][str(a)]["OGD"]["mean"] for a in ang]
+    ax.plot(al, m, marker="o", lw=1.6, color=_c("OARF"), label="OARF")
+    ax.plot(al, ogd, ls="--", lw=1.3, color=_c("OGD"), label="OGD (no anchor)")
+    ax.invert_xaxis()
+    ax.set_xlabel(r"channel alignment to truth ($\cos\theta$)")
+    ax.set_ylabel(r"worst-$\mathrm{do}(A)$ MSE")
+    ax.set_title("(b) Misspecified channel"); ax.legend()
+    _save(fig, "fig12_stress")
+
+
+def fig13_real_dm(real, target):
+    """Fig. 13 — pairwise Diebold-Mariano on the real target (negative=row better)."""
+    dm = real[target]["dm"]
+    names = dm["names"]; stat = np.array(dm["stat"])
+    fig, ax = plt.subplots(figsize=(6.6, 5.8))
+    im = ax.imshow(stat, cmap="coolwarm", vmin=-4, vmax=4)
+    ax.set_xticks(range(len(names))); ax.set_xticklabels(names, rotation=90, fontsize=7)
+    ax.set_yticks(range(len(names))); ax.set_yticklabels(names, fontsize=7)
+    ax.set_title(f"{target}: Diebold--Mariano statistic\n(row vs column; $<0$ = row better)")
+    fig.colorbar(im, ax=ax, label="DM statistic")
+    _save(fig, f"fig13_dm_{target}")
+
+
 def main():
     syn = _load(os.path.join(SYN, "metrics.json"))
     syn_detail = _load(os.path.join(SYN, "seed0_detail.json"))
@@ -359,6 +401,9 @@ def main():
     abl_path = os.path.join(SYN, "ablations.json")
     if os.path.exists(abl_path):
         fig11_ablations(_load(abl_path))
+    stress_path = os.path.join(SYN, "stress.json")
+    if os.path.exists(stress_path):
+        fig12_stress(_load(stress_path))
 
     real_path = os.path.join(REAL, "metrics.json")
     if os.path.exists(real_path):
@@ -368,6 +413,7 @@ def main():
             if os.path.exists(dpath):
                 fig9_real_regime(_load(dpath), real, tgt)
             fig10_equity(real, tgt)
+            fig13_real_dm(real, tgt)
 
 
 if __name__ == "__main__":
