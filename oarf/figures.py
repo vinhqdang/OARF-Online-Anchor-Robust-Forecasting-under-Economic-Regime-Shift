@@ -294,6 +294,56 @@ def fig10_equity(real_metrics, target):
     _save(fig, f"fig10_equity_{target}")
 
 
+def fig11_ablations(abl):
+    """Fig. 11 — ablations: beta sensitivity, component knock-outs, channel."""
+    fig, axes = plt.subplots(1, 3, figsize=(13.5, 3.6))
+
+    # (a) beta sensitivity
+    ax = axes[0]
+    betas = sorted(float(k) for k in abl["beta"])
+    wdo = [abl["beta"][f"{b}"]["worst_do_MSE"]["mean"] for b in betas]
+    wsd = [abl["beta"][f"{b}"]["worst_do_MSE"]["sd"] for b in betas]
+    mse = [abl["beta"][f"{b}"]["in_regime_MSE"]["mean"] for b in betas]
+    ax.errorbar(betas, wdo, yerr=wsd, color=_c("OARF"), marker="o", lw=1.6,
+                capsize=2, label="worst-$\\mathrm{do}(A)$ MSE")
+    ax.plot(betas, mse, color=_c("OGD"), marker="s", lw=1.2, ls="--",
+            label="in-regime MSE")
+    ax.set_xlabel(r"EMA decay $\beta$"); ax.set_ylabel("MSE")
+    ax.set_title("(a) Moment-tracking horizon"); ax.legend()
+
+    # (b) component ablations (worst-do MSE)
+    ax = axes[1]
+    order = ["OARF (full)", "no centring", "no AdaGrad", "random channel",
+             "xi=0 (OGD)"]
+    order = [o for o in order if o in abl["components"]]
+    vals = [abl["components"][o]["worst_do_MSE"]["mean"] for o in order]
+    sds = [abl["components"][o]["worst_do_MSE"]["sd"] for o in order]
+    cols = ["#d62728" if o == "OARF (full)" else "#888888" for o in order]
+    ax.barh(range(len(order)), vals, xerr=sds, color=cols, alpha=0.9,
+            error_kw=dict(lw=0.6))
+    ax.set_yticks(range(len(order))); ax.set_yticklabels(order, fontsize=8)
+    ax.invert_yaxis(); ax.set_xlabel("worst-$\\mathrm{do}(A)$ MSE")
+    ax.set_title("(b) Component knock-outs")
+
+    # (c) learned-channel dimension q: worst-do MSE + alignment
+    ax = axes[2]
+    qs = sorted(int(k) for k in abl["channel_q"])
+    wq = [abl["channel_q"][str(q)]["worst_do_MSE"]["mean"] for q in qs]
+    aq = [abl["channel_q"][str(q)]["alignment"]["mean"] for q in qs]
+    ax.plot(qs, wq, color=_c("OARF"), marker="o", lw=1.6,
+            label="worst-$\\mathrm{do}(A)$ MSE")
+    ax.set_xlabel(r"discovered channel dim $q$"); ax.set_ylabel("worst-do MSE")
+    ax.set_title("(c) Channel dimension"); ax.set_xticks(qs)
+    ax2 = ax.twinx()
+    ax2.plot(qs, aq, color="#2ca02c", marker="^", lw=1.2, ls="--",
+             label="subspace alignment")
+    ax2.set_ylabel("alignment to truth", color="#2ca02c"); ax2.set_ylim(0, 1)
+    ax.axvline(2, color="k", ls=":", lw=0.7, alpha=0.4)
+    lines = ax.get_lines() + ax2.get_lines()
+    ax.legend(lines, [l.get_label() for l in lines], fontsize=7, loc="center right")
+    _save(fig, "fig11_ablations")
+
+
 def main():
     syn = _load(os.path.join(SYN, "metrics.json"))
     syn_detail = _load(os.path.join(SYN, "seed0_detail.json"))
@@ -305,6 +355,10 @@ def main():
     fig6_learned_channel(syn["per_seed"])
     fig7_per_regime_heatmap(syn["per_seed"])
     fig8_dm_heatmap(syn["per_seed"])
+
+    abl_path = os.path.join(SYN, "ablations.json")
+    if os.path.exists(abl_path):
+        fig11_ablations(_load(abl_path))
 
     real_path = os.path.join(REAL, "metrics.json")
     if os.path.exists(real_path):

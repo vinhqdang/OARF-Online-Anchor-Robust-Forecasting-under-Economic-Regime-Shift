@@ -97,7 +97,8 @@ class OARF(OnlineModel):
 
     def __init__(self, d, p, B=None, q=2, xi=1.0, eta=0.05, beta=0.98,
                  eps=1e-3, lam2=1e-4, learn_channel=False, eta_B=0.3,
-                 channel_every=10, gamma_c=0.3, block=40, name=None):
+                 channel_every=10, gamma_c=0.3, block=40, center=True,
+                 adagrad=True, name=None):
         super().__init__(d, p, name or ("OARF-CD" if learn_channel else "OARF"))
         if B is None:
             rng = np.random.default_rng(0)
@@ -110,6 +111,8 @@ class OARF(OnlineModel):
         self.learn_channel = learn_channel
         self.eta_B, self.channel_every, self.gamma_c = eta_B, channel_every, gamma_c
         self.block = block
+        self.center = center              # ablation: EMA-centring of moments
+        self.adagrad = adagrad            # ablation: adaptive vs fixed step
 
         self.w = np.zeros(d + 1)              # [intercept; coef]
         self.opt = AdaStep(d + 1, eta)        # adaptive, scale-invariant step
@@ -154,7 +157,10 @@ class OARF(OnlineModel):
         mx = self.mean_x.update(xs)
         ma = self.mean_a.update(a)
         mr = float(self.mean_r.update([r])[0])
-        xt, at, rt = xs - mx, a - ma, r - mr           # centered
+        if self.center:
+            xt, at, rt = xs - mx, a - ma, r - mr       # centered
+        else:                                          # ablation: no centring
+            xt, at, rt = xs, a, r
 
         # --- EMA cross-moments of centered variables ---
         m_Xr = self.m_Xr.update(xt * rt)
@@ -167,7 +173,8 @@ class OARF(OnlineModel):
         grad = -r * phi
         grad[1:] += -2.0 * self.xi * (m_XA @ Minv_Ar)
         grad[1:] += self.lam2 * self.w[1:]             # intercept unpenalised
-        self.w = self.w - self.opt.step(grad)
+        self.w = self.w - (self.opt.step(grad) if self.adagrad
+                           else self.eta * grad)
 
         # --- online channel discovery (Sec 2.3) ---
         if self.learn_channel:
