@@ -1,31 +1,29 @@
 % OARF — Online Anchor-Robust Forecasting under Economic Regime Shift
-% Generic/Springer-style variant: standard `article' class with a
-% Springer-conventional single-column layout, compiles on a base TeX Live
-% install. For submission to the International Journal of Forecasting
-% (Elsevier, double-anonymized review), use manuscript_ijf.tex +
-% titlepage_ijf.tex instead.
+% Submission variant for: International Journal of Forecasting (Elsevier)
 %
-% Porting THIS file to Springer's own sn-jnl.cls is NOT a drop-in preamble
-% swap (verified by test compilation): sn-jnl.cls loads hyperref and natbib
-% itself with its own options, so re-loading them here causes option-clash
-% errors; its \author/\affil macros use a different syntax than authblk's
-% (\fnm{}\sur{}, \orgdiv{}\orgname{}\orgaddress{}); and its table/
-% threeparttable redefinitions break this file's table environments. A real
-% port needs those three areas reworked, not just a documentclass change.
+% This file is the ANONYMIZED MANUSCRIPT for double-anonymized review: it must
+% contain no author names, affiliations, or other identifying information (see
+% titlepage_ijf.tex for the companion title page, submitted as a separate file
+% per the journal's double-anonymized review instructions). Built on Elsevier's
+% elsarticle.cls with the `authoryear` option so in-text citations render as
+% "Author (Year)" per the journal's reference style; the body, floats, algorithm
+% and \cite commands are otherwise unchanged from manuscript.tex.
+%
+% Compile with: pdflatex manuscript_ijf && bibtex manuscript_ijf \
+%   && pdflatex manuscript_ijf && pdflatex manuscript_ijf
 
-\documentclass[11pt]{article}
+\documentclass[authoryear,preprint,12pt]{elsarticle}
 
-% Compile with pdflatex. We deliberately keep the default OT1 text encoding so
-% the body is set in the Computer Modern *Type-1* (vector) fonts that ship with
-% a base TeX Live install. Loading [T1]{fontenc} without the lmodern or cm-super
-% Type-1 EC fonts forces a bitmap Type-3 fallback for the running text, which
-% renders as fuzzy/garbled glyphs in some PDF viewers; OT1 + cmap + glyphtounicode
-% avoids that while still producing searchable, copy-pasteable ligatures.
+% We deliberately keep the default OT1 text encoding so the body is set in the
+% Computer Modern *Type-1* (vector) fonts that ship with a base TeX Live
+% install. Loading [T1]{fontenc} without the lmodern or cm-super Type-1 EC
+% fonts forces a bitmap Type-3 fallback for the running text, which renders as
+% fuzzy/garbled glyphs in some PDF viewers; OT1 + cmap + glyphtounicode avoids
+% that while still producing searchable, copy-pasteable ligatures.
 \usepackage[utf8]{inputenc}
 \usepackage{cmap}            % searchable/copyable ligatures
 \input{glyphtounicode}
 \pdfgentounicode=1
-\usepackage[margin=1in]{geometry}
 \usepackage{amsmath,amssymb,amsthm,bm}
 \usepackage{graphicx}
 \usepackage{booktabs}
@@ -40,8 +38,6 @@
 \usepackage[section]{placeins}  % keep floats within their section
 \usepackage[hidelinks]{hyperref}
 \usepackage{xurl}               % allow long URLs to break across lines
-\usepackage[numbers,sort&compress]{natbib}
-\usepackage{authblk}
 
 \graphicspath{{../figures/}}
 
@@ -61,66 +57,39 @@
 \DeclareMathOperator*{\Var}{Var}
 \DeclareMathOperator{\proj}{proj}
 
-\title{\bfseries Online Anchor-Robust Forecasting under Economic Regime Shift}
-
-\author[1]{OARF Authors\thanks{Corresponding author. Code, data-build scripts and
-the exact commands that regenerate every number, table and figure are released
-with this manuscript.}}
-\affil[1]{\small (affiliation withheld for review)}
-
-\date{\today}
+\journal{International Journal of Forecasting}
 
 \begin{document}
-\maketitle
+
+\begin{frontmatter}
+
+\title{Online Anchor-Robust Forecasting under Economic Regime Shift}
+
+% Author names and affiliations are withheld from this file for double-anonymized
+% review; see titlepage_ijf.tex.
 
 \begin{abstract}
-\noindent
-\textit{Problem.} Most online forecasters handle economic regime shifts
-\emph{reactively}, detecting a change and then recalibrating, and so pay a
-re-adaptation cost at each break. We study a complementary, proactive strategy for
-the case in which shifts arrive through an \emph{observable channel} of regime
-drivers such as geopolitical risk, policy uncertainty or financial volatility.
-\textit{Method.} We bring anchor regression online: \OARF{} (Online Anchor-Robust
-Forecasting) is a streaming first-order learner that, with past-only
-exponential-moving-average moment estimates, drives the component of its residual
-correlated with a fixed driver channel toward zero; with the penalty set to zero it
-reduces to online gradient descent. An exploratory add-on, \OARFCD{}, estimates the
-driver subspace online from its across-regime nonstationarity, and carries its own
-online, ground-truth-free reliability diagnostic --- the eigengap of the discovery
-layer's own scatter statistic --- that a deployed system can monitor without ever
-observing the true channel.
-\textit{Theory.} We propose \emph{interventional regret} as an evaluation lens for
-fixed-channel online anchor robustness and prove the fixed-channel learner is
-no-regret against a $K$-switch comparator under linear-SCM and stationarity
-assumptions ($O(\sqrt{T(1+K)})$ with oracle anchor moments, $O((1{+}K)T^{2/3})$
-online); the learned-channel add-on is \emph{not} covered.
-\textit{Evidence.} On a controlled structural-causal-model benchmark with a held-out
-intervention grid, fixed-channel \OARF{} cuts the worst-case interventional error by
-roughly two-thirds versus reactive and distributionally robust online learners, at
-the cost of higher in-distribution error; stress tests and additional scenarios show
-the advantage shrinks and can reverse once the anchor is noisy, misspecified, or not
-the true regime driver, and the learned channel, though it recovers the subspace on
-average, is unstable: a minority of streams settle on a poorly identified channel and
-incur a heavy-tailed worst-case cost. We show this instability is detectable online:
-the eigengap of the discovery layer's own across-block scatter --- computable without
-the true channel --- correlates with retrospective subspace recovery and, used as an
-automatic gate that falls back to the fixed-channel update on the streams it flags as
-unreliable, recovers roughly a quarter of the learned channel's mean worst-case
-interventional error. On sixteen years of daily energy variance-proxy forecasting all
-methods lie within the Model Confidence Set, so \OARF{} is competitive but not
-significantly better. The contribution is thus methodological and diagnostic: a
-streaming anchor-regression update, an interventional-robustness protocol, a
-validated online safeguard against an unreliable discovered channel, and evidence on
-when anchor-based proactive robustness helps or fails.
-
-\vspace{0.6em}
-\noindent\textbf{Keywords:} online learning; distribution shift; anchor
-regression; anchor robustness; interventional robustness; forecast combination; realised volatility;
-regime change; distributionally robust optimisation.
-
-\vspace{0.3em}
-\noindent\textbf{JEL:} C53, C22, C58, Q47.
+Online forecasters typically respond to economic regime shifts reactively,
+detecting a break and then recalibrating. We instead make a forecaster
+proactively robust when shifts travel through an observable driver such as
+geopolitical risk or policy uncertainty. Our method, OARF, brings anchor
+regression online: a streaming learner that removes the part of its prediction
+error correlated with the driver, and reduces to ordinary online learning when
+that correction is switched off. An add-on estimates the driver from the data
+itself rather than requiring it to be supplied; because this estimate can be
+unreliable, we introduce an online diagnostic, computed without knowing the
+true driver, that detects unreliable estimates and automatically falls back to
+the safer method, recovering roughly a quarter of the resulting loss. On a
+controlled benchmark the method cuts worst-case error by two-thirds; on
+sixteen years of energy-price forecasting it is competitive but not decisively
+better than existing methods.
 \end{abstract}
+
+\begin{keyword}
+Online learning \sep Combining forecasts \sep Robustness \sep Volatility forecasting \sep Structural change \sep Econometric models \sep Causality
+\end{keyword}
+
+\end{frontmatter}
 
 \section{Introduction}\label{sec:intro}
 
@@ -1450,12 +1419,10 @@ step in that direction --- Davis--Kahan already supplies the estimation-error ha
 such an argument --- but connecting it to a regret bound, rather than to the purely
 empirical validation reported here, remains open.
 
-\paragraph{Reproducibility.} All code and data-build scripts that regenerate every number,
-table and figure in this paper are available at
-\url{https://github.com/vinhqdang/OARF-Online-Anchor-Robust-Forecasting-under-Economic-Regime-Shift}.
-This repository is public and is \emph{not} anonymised; should the journal require
-double-blind review, an anonymised mirror can be provided and this link withheld until
-acceptance.
+\paragraph{Reproducibility.} All code and data-build scripts that regenerate every
+number, table and figure in this paper will be made available in a public repository
+upon acceptance; the repository link is withheld from this anonymized manuscript for
+double-anonymized review and is provided to the editor on the title page.
 
 \appendix
 
@@ -1660,8 +1627,34 @@ consistent with the statistically insignificant aggregate result.}
 \label{fig:events}
 \end{figure}
 
+\section*{Funding}
+This research did not receive any specific grant from funding agencies in the
+public, commercial, or not-for-profit sectors.
+
+\section*{Declaration of competing interest}
+The author declares that he has no known competing financial interests or
+personal relationships that could have appeared to influence the work reported
+in this paper.
+
+\section*{CRediT authorship contribution statement}
+The corresponding author is responsible for conceptualization, methodology,
+software, formal analysis, investigation, data curation, writing (original
+draft, review and editing), and visualization.
+
+\section*{Data availability}
+Public data sources and the code that regenerates every number, table and
+figure in this paper (see Reproducibility, above) will be made available in a
+public repository upon acceptance.
+
+\section*{Declaration of generative AI and AI-assisted technologies in the manuscript preparation process}
+During the preparation of this work, the author used an AI-based writing
+assistant to help draft and revise text and improve the clarity of exposition,
+following the author's direction and intent. After using this tool, the
+author reviewed, verified and edited all content and takes full
+responsibility for the content of the published article.
+
 \small
-\bibliographystyle{plainnat}
+\bibliographystyle{elsarticle-harv}
 \bibliography{references}
 
 \end{document}

@@ -31,6 +31,10 @@ python -m oarf.figures                        # regenerate all figures
 
 # build the manuscript (needs a TeX installation)
 cd manuscript && pdflatex manuscript && bibtex manuscript && pdflatex manuscript && pdflatex manuscript
+
+# International Journal of Forecasting submission variant (anonymized body + title page)
+cd manuscript && pdflatex manuscript_ijf && bibtex manuscript_ijf && pdflatex manuscript_ijf && pdflatex manuscript_ijf
+cd manuscript && pdflatex titlepage_ijf
 ```
 
 ## What is implemented
@@ -45,7 +49,7 @@ cd manuscript && pdflatex manuscript && bibtex manuscript && pdflatex manuscript
 | `oarf/figures.py` | Figures 1–16 (§7), incl. the eigengap-diagnostic figure | ✅ |
 | `download_data.py` | Scriptable download of the public panel | ✅ |
 | `run_synthetic.py`, `run_real.py` | End-to-end experiments | ✅ |
-| `manuscript/` | Springer-formatted paper (`manuscript.pdf`) + `references.bib` | ✅ |
+| `manuscript/` | `manuscript.tex` (generic/Springer-style single file) and, for submission to the *International Journal of Forecasting* (Elsevier, double-anonymized review), `manuscript_ijf.tex` (anonymized body, `elsarticle.cls`, author-year citations, 100–150-word abstract, IJF declarations) + `titlepage_ijf.tex` (author/affiliation, submitted as a separate file) + `references.bib` | ✅ |
 
 ### Baselines (§5)
 Floors — **OGD** (= OARF with ξ=0), **Rolling-OLS**, **ACI**.
