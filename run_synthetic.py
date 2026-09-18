@@ -59,6 +59,7 @@ def run_one_seed(seed, T, xi=6.0):
             rows[name]["alignment_traj"] = [
                 (s, ev.subspace_alignment(np.array(B), scm.B_true))
                 for s, B in m.B_hist[::3]]
+            rows[name]["eigengap_traj"] = list(m.eigengap_hist[::3])
 
     names, dm_stat, dm_p = ev.dm_matrix(results, eval_start)
     mcs = ev.model_confidence_set(results, eval_start, n_boot=1000, seed=seed)

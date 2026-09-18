@@ -3,10 +3,14 @@
 A streaming anchor-regression learner that **immunises** a forecaster against
 economic regime shifts *ex ante* by driving the part of its residual correlated
 with observable regime drivers (geopolitical risk, policy uncertainty,
-volatility) toward zero — and, in its novel layer, **discovers that causal
-channel online** instead of being handed it. The target guarantee is a new
-object, *interventional regret*: regret against the best regime-conditional
-predictor under the worst-case bounded future intervention on the regime driver.
+volatility) toward zero. This fixed-channel method (OARF) is the part with a
+proof; a separate exploratory add-on (OARF-CD) attempts to **discover that
+channel online** instead of being handed it, and carries its own online,
+ground-truth-free reliability diagnostic (an eigengap statistic) that flags when
+the discovered channel should not be trusted and the fixed-channel update should
+be used instead. The target guarantee is a new object, *interventional regret*:
+regret against the best regime-conditional predictor under the worst-case
+bounded future intervention on the regime driver.
 
 This repository contains the full implementation, the leak-free evaluation
 harness, the data-build scripts, the figure code, and a Springer-formatted
@@ -38,7 +42,7 @@ cd manuscript && pdflatex manuscript && bibtex manuscript && pdflatex manuscript
 | `oarf/evaluate.py` | Leak-free walk-forward, full metric battery (§6), Diebold–Mariano, Model Confidence Set | ✅ |
 | `oarf/online.py` | Past-only winsorised standardiser, EMA, AdaGrad step | ✅ |
 | `oarf/load_panel.py` | FRED / GPR / EPU loader, HAR/GARCH experts, vol regimes (§3–4) | ✅ |
-| `oarf/figures.py` | Figures 1–10 (§7) | ✅ |
+| `oarf/figures.py` | Figures 1–16 (§7), incl. the eigengap-diagnostic figure | ✅ |
 | `download_data.py` | Scriptable download of the public panel | ✅ |
 | `run_synthetic.py`, `run_real.py` | End-to-end experiments | ✅ |
 | `manuscript/` | Springer-formatted paper (`manuscript.pdf`) + `references.bib` | ✅ |
@@ -62,22 +66,27 @@ The two experiments answer different questions and the paper is explicit about i
   the anchor). Here the held-out `do(A:=ν)` grid lets us measure genuine
   interventional robustness against ground truth. **OARF cuts worst-case
   interventional MSE by 55–78%** versus reactive/DRO online methods, approaching
-  the *batch* causal oracle while remaining fully online, and the
-  channel-discovery layer recovers the true intervention subspace
-  (mean alignment **0.87**, random baseline 0.42). This is where the mechanism is
-  demonstrated decisively.
+  the *batch* causal oracle while remaining fully online. The channel-discovery
+  layer recovers the true intervention subspace *on average* (mean alignment
+  **0.88**, random baseline 0.42), but a minority of seeds settle on a poorly
+  identified channel and drive a heavy-tailed worst-case cost; gating the
+  learned channel on its own eigengap diagnostic (no ground truth used) catches
+  most of that minority and recovers roughly a quarter of the mean worst-case
+  error the ungated learned channel gives up. This is where the mechanism, and
+  its practical safeguard, are demonstrated decisively.
 
 * **Real (deployment).** Sixteen years (2010–2026) of daily public data, framed
   as one-step-ahead **log realised-variance** forecasting (predictable and
   regime-dependent) combined from heterogeneous experts. There is **no** ground-
   truth intervention, so we report regime-aware, distributional and
-  decision-economic metrics with DM/MCS significance. OARF / OARF-CD are within
-  the Model Confidence Set of the best method and **lead the 2026 DRO combiners
-  and reactive online learners on the regime-robustness metrics**, with the
-  *learned* channel giving the best worst-regime MSE in the OARF family. Gains are
-  modest in absolute terms — on real series the driver–residual coupling is weaker
-  than in the controlled SCM — and we say so. We do **not** claim causal
-  identification; the estimand is the diluted-causal parameter.
+  decision-economic metrics with DM/MCS significance. Ten of eleven methods,
+  OARF and OARF-CD included, lie within the Model Confidence Set: no method is
+  significantly better than the field, so we read OARF as **competitive but not
+  a clear winner** on real data, not as a success story. The driver–residual
+  coupling is weaker in real series than in the controlled SCM, which is the
+  outcome our stress tests predict for a weak, noisy channel and should not be
+  over-read. We do **not** claim causal identification; the estimand is the
+  diluted-causal parameter.
 
 ## Data sources (§3)
 

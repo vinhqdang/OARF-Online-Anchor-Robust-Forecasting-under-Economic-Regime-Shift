@@ -4,6 +4,20 @@
 This single document specifies everything needed to implement and evaluate the
 method end to end. Notation is consistent throughout. Equations use `$...$`.
 
+> **Status note.** This document records the *original* plan, including the
+> "novel layer" framing of §2.3 below. The manuscript (`manuscript/manuscript.tex`)
+> has since diverged from that framing in one respect worth flagging here: online
+> channel discovery (§2.3, `OARF-CD`) turned out to be heuristic, unstable across
+> seeds, and outside the paper's regret theorem, so the manuscript treats the
+> **fixed-channel method as the primary, proven contribution** and §2.3 as an
+> exploratory add-on. A later addition — an online, ground-truth-free eigengap
+> diagnostic that flags when the learned channel is unreliable and gates a
+> fallback to the fixed-channel update — is validated in the manuscript
+> (Section 2, "An online, ground-truth-free reliability diagnostic"; results in
+> Section 4) but is **not** in this plan, since it was added afterward in
+> response to review. Treat the manuscript, not this plan, as authoritative on
+> framing and status; this document is kept as a design record.
+
 ---
 
 ## 0. One-paragraph thesis

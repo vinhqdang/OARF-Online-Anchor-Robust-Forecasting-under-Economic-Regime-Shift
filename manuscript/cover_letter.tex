@@ -1,4 +1,4 @@
-% Cover letter for initial submission — OARF
+% Cover letter for submission — OARF
 % Compile with pdflatex (OT1 text encoding -> vector Computer Modern Type-1 fonts).
 \documentclass[11pt]{article}
 \usepackage[utf8]{inputenc}
@@ -16,8 +16,7 @@
 
 \noindent
 The Editors\\
-\textit{Computational Economics}\\
-Springer
+\textit{International Journal of Forecasting}
 
 \bigskip
 \noindent \today
@@ -28,7 +27,7 @@ Springer
 \bigskip
 \noindent We are pleased to submit our manuscript, \textbf{``Online Anchor-Robust
 Forecasting under Economic Regime Shift,''} for consideration as a research article in
-\textit{Computational Economics}.
+the \textit{International Journal of Forecasting}.
 
 Economic and financial time series are punctuated by regime shifts --- geopolitical
 shocks, monetary-policy turns, energy crises, regulatory interventions --- and the
@@ -37,34 +36,45 @@ dominant response in the online-learning and conformal-prediction literatures is
 are always one step behind and pay a re-adaptation cost at every break. Our paper
 develops and evaluates a complementary, \emph{proactive} strategy for the common case
 in which shifts travel through an observable channel of regime drivers, such as
-geopolitical-risk or policy-uncertainty indices.
+geopolitical-risk or policy-uncertainty indices, and pairs it with a practical answer
+to the objection such methods usually face: what happens when the channel is not
+handed to you correctly specified?
 
-The paper makes three contributions. First, we bring \emph{anchor regression} ---
-until now a batch estimator --- online, as \textsc{OARF}: a leak-free, first-order
-streaming learner that drives the component of its residual correlated with a driver
-channel toward zero using past-only exponential-moving-average moments, and that reduces
+The paper makes four contributions. First, we bring \emph{anchor regression} --- until
+now a batch estimator --- online, as \textsc{OARF}: a leak-free, first-order streaming
+learner that drives the component of its residual correlated with a driver channel
+toward zero using past-only exponential-moving-average moments, and that reduces
 exactly to online gradient descent when its robustness penalty is switched off. Second,
-we propose \emph{interventional regret} as an evaluation lens for online robustness and
-prove the fixed-channel learner is no-regret against a switching comparator under
-linear structural-causal-model assumptions, with two explicit rates for oracle and
-online moment estimation. Third, we provide a careful empirical study --- a controlled
-SCM with a held-out intervention grid, plus sixteen years of public daily energy
+because the channel is not always known in advance, we study an online channel-discovery
+add-on and show that its central failure mode --- a minority of streams settling on a
+poorly identified channel and incurring a heavy-tailed worst-case cost --- is
+\emph{detectable without ground truth}: an eigengap diagnostic computed from the
+discovery layer's own statistics tracks true recovery quality and, used as an automatic
+gate that falls back to the fixed-channel update, recovers roughly a quarter of the
+mean worst-case error the ungated learned channel gives up. Third, we propose
+\emph{interventional regret} as an evaluation lens for online robustness and prove the
+fixed-channel learner is no-regret against a switching comparator under linear
+structural-causal-model assumptions, with two explicit rates for oracle and online
+moment estimation. Fourth, we provide a careful empirical study --- a controlled SCM
+with a held-out intervention grid, plus sixteen years of public daily energy
 variance-proxy data --- together with stress tests, assumption-violation scenarios and a
 pre-deployment checklist that map precisely \emph{when} proactive anchor robustness
 helps and when it fails.
 
-We have tried to be scrupulously honest about scope. The method delivers large
-reductions in worst-case interventional error when the anchor is informative and shifts
-are anchor-mediated, but we show, and report plainly, that the advantage shrinks or
-reverses under noisy, misspecified or non-anchor-mediated shifts; that an exploratory
-channel-discovery add-on, while recovering the driver subspace on average, is unstable
-and is not covered by our theory; and that on the real energy data all methods lie
-within the Model Confidence Set, so \textsc{OARF} is competitive but not statistically
-superior. We believe this combination --- a principled streaming method, an
-interventional-robustness protocol, and a diagnostic account of its limits --- is a
-useful and publishable contribution at the interface of online learning, causal
-robustness and economic forecasting, and is well suited to the computational and
-methodological focus of \textit{Computational Economics}.
+We have tried to be scrupulously honest about scope throughout. The method delivers
+large reductions in worst-case interventional error when the anchor is informative and
+shifts are anchor-mediated, but we show, and report plainly, that the advantage shrinks
+or reverses under noisy, misspecified or non-anchor-mediated shifts, and that the
+channel-discovery add-on remains outside our regret theorem even with the diagnostic
+gate. On the real energy data all methods lie within the Model Confidence Set, so
+\textsc{OARF} is competitive but not statistically superior, and we say so rather than
+over-reading the point estimates. We believe this combination --- a principled
+streaming method, a validated safeguard against not knowing the channel, an
+interventional-robustness evaluation protocol, and a diagnostic account of the
+method's limits --- is a useful and publishable contribution at the interface of online
+learning, causal robustness and economic forecasting, and is well suited to the
+\textit{International Journal of Forecasting}'s focus on methodologically rigorous,
+practically evaluated forecasting research.
 
 To support full reproducibility, all code, data-build scripts and the exact commands
 that regenerate every number, table and figure are publicly available at

@@ -137,6 +137,7 @@ class OARF(OnlineModel):
         self._n_blk = 0
         self._step = 0
         self.B_hist = []                      # snapshots for Fig. 6
+        self.eigengap_hist = []               # (step, normalised eigengap) diagnostic
 
         self._cache = None
 
@@ -231,6 +232,17 @@ class OARF(OnlineModel):
         B = self.B + self.eta_B * (2.0 * (M @ self.B))   # projected ascent step
         B, _ = np.linalg.qr(B)                           # re-orthonormalise
         self.B = B
+        # ground-truth-free identifiability diagnostic: the eigengap between
+        # the q-th and (q+1)-th eigenvalue of M, normalised by its spectral
+        # scale. A small gap means the top-q subspace of M is only weakly
+        # identified by the data seen so far (Davis-Kahan: subspace
+        # estimation error is controlled by this gap), independent of any
+        # knowledge of the true channel.
+        eigval = np.linalg.eigvalsh(M)[::-1]
+        scale = np.abs(eigval).sum() + self.eps
+        gap = float((eigval[self.q - 1] - eigval[self.q]) / scale) \
+            if len(eigval) > self.q else float("nan")
+        self.eigengap_hist.append((self._step, gap))
 
     def effective_linear(self):
         return float(self.w[0]), self.w[1:].copy()

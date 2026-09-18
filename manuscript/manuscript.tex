@@ -80,7 +80,10 @@ Forecasting) is a streaming first-order learner that, with past-only
 exponential-moving-average moment estimates, drives the component of its residual
 correlated with a fixed driver channel toward zero; with the penalty set to zero it
 reduces to online gradient descent. An exploratory add-on, \OARFCD{}, estimates the
-driver subspace online from its across-regime nonstationarity.
+driver subspace online from its across-regime nonstationarity, and carries its own
+online, ground-truth-free reliability diagnostic --- the eigengap of the discovery
+layer's own scatter statistic --- that a deployed system can monitor without ever
+observing the true channel.
 \textit{Theory.} We propose \emph{interventional regret} as an evaluation lens for
 fixed-channel online anchor robustness and prove the fixed-channel learner is
 no-regret against a $K$-switch comparator under linear-SCM and stationarity
@@ -92,11 +95,18 @@ roughly two-thirds versus reactive and distributionally robust online learners, 
 the cost of higher in-distribution error; stress tests and additional scenarios show
 the advantage shrinks and can reverse once the anchor is noisy, misspecified, or not
 the true regime driver, and the learned channel, though it recovers the subspace on
-average, is unstable. On sixteen years of daily energy variance-proxy forecasting all
+average, is unstable: a minority of streams settle on a poorly identified channel and
+incur a heavy-tailed worst-case cost. We show this instability is detectable online:
+the eigengap of the discovery layer's own across-block scatter --- computable without
+the true channel --- correlates with retrospective subspace recovery and, used as an
+automatic gate that falls back to the fixed-channel update on the streams it flags as
+unreliable, recovers roughly a quarter of the learned channel's mean worst-case
+interventional error. On sixteen years of daily energy variance-proxy forecasting all
 methods lie within the Model Confidence Set, so \OARF{} is competitive but not
 significantly better. The contribution is thus methodological and diagnostic: a
-streaming anchor-regression update, an interventional-robustness protocol, and
-evidence on when anchor-based proactive robustness helps or fails.
+streaming anchor-regression update, an interventional-robustness protocol, a
+validated online safeguard against an unreliable discovered channel, and evidence on
+when anchor-based proactive robustness helps or fails.
 
 \vspace{0.6em}
 \noindent\textbf{Keywords:} online learning; distribution shift; anchor
@@ -155,7 +165,14 @@ add-on we sketch a second layer, \OARFCD{}, that attempts to \emph{learn the cha
 from the stream} by identifying the subspace of the observable context along which
 the relationship to the regime is most unstable; we report it as a diagnostic
 proof of concept rather than a finished method, because it is heuristic, not covered
-by our theory, and (as our experiments show) unstable across seeds. Finally, because
+by our theory, and (as our experiments show) unstable across seeds. Because that
+instability is exactly the practical risk of not knowing the channel, we go one step
+further and ask whether it can be \emph{detected online, without the true channel}:
+we show that a statistic already computed by the discovery layer --- the eigengap of
+its across-block scatter --- tracks retrospective recovery quality, and that gating
+the learned channel on it substantially reduces its worst-case cost in practice. This
+turns ``fall back when the channel looks unreliable'' from a stated intention into a
+validated mechanism. Finally, because
 the usual notions of regret do not capture what such a method is for, we define and
 analyse \emph{interventional regret}: regret measured against the best
 regime-conditional predictor under the worst-case bounded future intervention.
@@ -174,6 +191,15 @@ it identifies a nonstationary subspace rather than a \emph{certified} causal cha
 it is \emph{not} covered by our theorem, and our experiments find it unstable across
 seeds. We include it as a diagnostic proof of concept, not as a deliverable on par
 with the fixed-channel method.
+\item \textbf{A validated, ground-truth-free online reliability diagnostic and
+gating rule} (Section~\ref{sec:method}). We show that the eigengap of the discovery
+layer's own across-block scatter --- observable online without the true channel ---
+correlates with the learned channel's (otherwise unobservable) recovery of the true
+subspace, and that an automatic rule which falls back to the fixed-channel update
+when the eigengap is small recovers roughly a quarter of the learned channel's mean
+worst-case interventional error on the synthetic benchmark. This is the first
+evidence that the paper's own ``monitor and fall back'' recommendation is
+implementable, not merely aspirational.
 \item \textbf{Interventional regret for the fixed-channel learner}
 (Section~\ref{sec:method}). We define interventional regret and give a complete proof
 that the \emph{fixed}-channel update is no-regret against a $K$-switch comparator:
@@ -214,8 +240,12 @@ of these share --- and what we must overcome for a streaming deployment --- is t
 they are batch procedures that take the environment or anchor variable as given.
 \OARF{} keeps the worst-case-intervention semantics of anchor regression but makes
 the estimator online; we additionally study a heuristic add-on that attempts to
-estimate the anchor channel from data, while treating the analyst-supplied channel as
-the primary mode.
+estimate the anchor channel from data, and, because that estimate can be
+unreliable, an online diagnostic that flags when to fall back on the analyst-supplied
+channel instead of trusting it blindly. The fixed, analyst-supplied channel remains
+the mode our theorem covers, but it is no longer the only mode with a safeguard: a
+deployment that cannot supply a correctly specified channel is not simply out of
+scope, it has a validated (if partial) fallback.
 
 \paragraph{Reactive online adaptation.} A second, very active line treats
 distribution shift as something to detect and then accommodate. Adaptive conformal
@@ -455,6 +485,32 @@ $m^{Xr},x_s\in\R^{d}$; $m^{XA}\in\R^{d\times q}$ (intercept row excluded);
 $M^{AA}\in\R^{q\times q}$; $m^{Ar}\in\R^{q}$; channel $B\in\R^{p\times q}$.
 $\Pi_{\mathcal{W}}$ projects onto the radius-$D$ ball.}
 \end{algorithm}
+
+\paragraph{An online, ground-truth-free reliability diagnostic.} The discovery layer
+can fail silently: nothing in Algorithm~\ref{alg:oarf} tells the forecaster whether
+the current $B$ is a good estimate of the true channel, and in a deployment the true
+channel is exactly the thing we do not observe. We use a quantity the layer already
+computes as a proxy for how well identified its top-$q$ subspace is. Let
+$\lambda_1\ge\cdots\ge\lambda_p$ be the eigenvalues of $M=S-\gamma_c uu^\top$ at a
+given block boundary (Eq.~\eqref{eq:channel}), and define the \emph{normalised
+eigengap}
+\begin{equation}\label{eq:eigengap}
+ \kappa \;=\; \frac{\lambda_q-\lambda_{q+1}}{\sum_{i=1}^p|\lambda_i|+\epsilon}\in[-1,1].
+\end{equation}
+By the Davis--Kahan $\sin\Theta$ theorem, the angle between the top-$q$ eigenspace of
+an estimated symmetric matrix and that of the population matrix it estimates is
+controlled by the corresponding population eigengap: a small or negative $\kappa$
+means the $q$-dimensional subspace $B$ is ascending is only weakly separated from the
+rest of the spectrum, so which $q$ directions get selected is sensitive to sampling
+noise, whereas a large $\kappa$ means the top-$q$ subspace is well separated and
+therefore stably identified. Unlike the subspace alignment used to score the
+discovery layer against ground truth in Section~\ref{sec:results}, $\kappa$ is
+computed entirely from the stream and is available to a live deployment. We treat it
+as a diagnostic, not a proof: Davis--Kahan bounds \emph{estimation} error given a
+population gap, and does not by itself certify that the recovered subspace is
+exogenous or causal, which remains the burden carried by the SCM assumptions of
+Proposition~\ref{prop:equiv}. Section~\ref{sec:results} tests empirically whether
+$\kappa$ tracks true recovery and whether gating on it helps.
 
 \paragraph{Interventional regret.} To state what \OARF{} guarantees we need a regret
 notion that rewards robustness to \emph{future} interventions, not merely good tracking
@@ -975,6 +1031,44 @@ order-of-magnitude higher error, pulling the mean (dotted) far above the median 
 \label{fig:scatter}
 \end{figure}
 
+\paragraph{Can the instability be caught online, without the true channel?}
+Figure~\ref{fig:scatter} shows the discovery layer's problem is a discrete
+tail-risk: most seeds recover a well-aligned channel, but a minority do not, and it
+is exactly those seeds that dominate the mean worst-case error. If that minority
+could be flagged \emph{as the stream runs} --- without consulting the true channel,
+which a deployment never observes --- the layer could simply decline to trust itself
+on those streams. Figure~\ref{fig:diagnostic}a tests whether the eigengap $\kappa$ of
+Eq.~\eqref{eq:eigengap} is such a flag: across the $50$ seeds, $\kappa$ correlates
+with the (otherwise unobservable) true subspace alignment at $r=0.62$, and $13$ of
+the $16$ seeds whose final alignment falls below $0.8$ also fall in the bottom
+quartile of post-warm-up eigengap. Figure~\ref{fig:diagnostic}b turns this into a
+gate: fall back to
+the fixed-channel update whenever a seed's average post-warm-up $\kappa$ sits in the
+bottom quartile (only~$13$ of $50$ seeds), and otherwise keep the learned channel.
+This lowers \OARFCD{}'s mean worst-$\doop(A)$ MSE from $0.147$ (ungated) to $0.113$
+--- a reduction of about a quarter, recovering roughly a third of the gap to the
+$0.059$ attained with the true channel --- using only a statistic the discovery
+layer already computes for itself. The gate is not a solution to channel
+misspecification: it discards the learned channel on the streams it flags rather
+than correcting it, and it inherits Davis--Kahan's limits (a large gap certifies a
+well-identified subspace, but says nothing about whether that subspace is
+exogenous). What it does show is that ``monitor stability and fall back'' --- the
+qualitative safeguard we recommend throughout this paper --- is not merely a
+plausible slogan: a concrete, ground-truth-free version of it recovers a
+non-trivial share of the fixed channel's advantage automatically.
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.98\textwidth]{fig16_eigengap_diagnostic.png}
+\caption{The eigengap diagnostic, validated. (a) Per-seed post-warm-up eigengap
+$\kappa$ vs.\ true subspace alignment ($r=0.62$); the dotted line is the
+$25$th-percentile gate. (b) Mean worst-case $\doop(A)$ MSE for OGD, ungated
+\OARFCD{}, \OARFCD{} gated on $\kappa$, and fixed-channel \OARF{} with the true
+channel. Gating recovers about a quarter of the ungated learned channel's mean
+worst-case error without using the ground truth.}
+\label{fig:diagnostic}
+\end{figure}
+
 \paragraph{Ablations.}
 Table~\ref{tab:abl} and Figure~\ref{fig:abl} take the method apart one component at a
 time, and the picture that emerges is that the anchor channel is doing the real work.
@@ -1295,6 +1389,9 @@ the learned channel is unstable; or the stream is too short / regimes change fas
 than the EMA window can track.\\[2pt]
 \textbf{Safeguard:} monitor channel stability and the anchor--residual coupling online
 and fall back to $\xi=0$ (plain OGD) when they indicate a weak or shifting channel.
+For the learned channel specifically, gate on the eigengap $\kappa$ of
+Eq.~\eqref{eq:eigengap}: it needs no ground truth, tracks true recovery, and, in our
+experiments, cuts the learned channel's mean worst-case error by about a quarter.
 \end{minipage}}
 \end{center}
 
@@ -1308,30 +1405,45 @@ for mean-shift regimes; outside that envelope it offers no benefit and can do ha
 forecasting the method is competitive but not decisively superior --- every retained
 method lies in the Model Confidence Set --- which is the outcome our stress tests
 predict for a weak, noisy channel and should not be over-read.
-\emph{What we did not solve:} reliable \emph{online} discovery of the anchor channel
+\emph{What we did not solve:} reliable \emph{online discovery} of the anchor channel
 --- the block-mean rule is reasonable but unstable, and from short data no unsupervised
-selector beats a random channel, so automatic anchor discovery remains open.
-\emph{Practical recommendation:} treat OARF as a tool to be used \emph{with}
+selector beats a random channel, so automatic anchor discovery remains open. What we
+did make progress on is the narrower and, for deployment, more urgent question of
+\emph{knowing when not to trust it}: the eigengap diagnostic of
+Eq.~\eqref{eq:eigengap} is a first, validated answer, not a complete one --- it
+flags unreliable recovery without certifying that a well-identified subspace is
+exogenous, and Section~\ref{sec:results} reports the scenarios (target-mechanism and
+variance shifts) it cannot help with because no channel, learned or supplied, works
+there. \emph{Practical recommendation:} treat OARF as a tool to be used \emph{with}
 diagnostics --- propose a candidate anchor, validate it on a warm-up stress test, and
-fall back to plain online learning when the anchor proves weak or unstable --- rather
-than a drop-in replacement. \emph{Future work:} stabilising channel discovery,
-nonlinear anchors and predictors, richer (variance and mechanism) interventions,
+fall back to plain online learning when the anchor, or the discovered channel's own
+stability diagnostic, indicates it is weak or unstable --- rather than a drop-in
+replacement. \emph{Future work:} tightening the link between the eigengap and a formal
+misspecification-robustness guarantee, sharper online channel discovery, nonlinear
+anchors and predictors, richer (variance and mechanism) interventions,
 commodity-specific implied-volatility data, and event-triggered deployment monitoring.
 Methodologically, the lasting contributions are a streaming anchor-regression update
-with a fixed-channel guarantee, interventional regret as an evaluation lens, and a
+with a fixed-channel guarantee, interventional regret as an evaluation lens, a
+validated ground-truth-free safeguard against an unreliable discovered channel, and a
 careful empirical account of when anchor-based proactive robustness helps or fails.
 \emph{What to cite this paper for:} the main reason to use or cite \OARF{} is not that
 it dominates all online forecasters --- it does not --- but that it provides (i) a
 principled, leak-free streaming form of anchor regression with a fixed-anchor
 interventional-regret guarantee, (ii) an interventional-robustness evaluation protocol
-for online forecasting, and (iii) a diagnostic study, with a pre-deployment checklist,
-for deciding whether proactive anchor robustness is appropriate for a given problem.
+for online forecasting, (iii) a validated, ground-truth-free diagnostic that lets a
+deployed system detect and fall back from an unreliable discovered channel rather than
+requiring the analyst to supply a correctly specified one, and (iv) a diagnostic
+study, with a pre-deployment checklist, for deciding whether proactive anchor
+robustness is appropriate for a given problem.
 
 \paragraph{Open theoretical question.} The fixed-channel theorem's EMA-moment rate of
 $T^{2/3}$ rests, through Lemma~\ref{lem:mom}, on within-regime stationarity
 (Assumption~\ref{ass:moment}); tightening it toward $\sqrt{T}$ without a changepoint
-trigger, and extending any guarantee to the learned channel, are the main open
-problems.
+trigger, and extending any regret guarantee to the learned or misspecified channel,
+are the main open problems. The eigengap diagnostic of Eq.~\eqref{eq:eigengap} is a
+step in that direction --- Davis--Kahan already supplies the estimation-error half of
+such an argument --- but connecting it to a regret bound, rather than to the purely
+empirical validation reported here, remains open.
 
 \paragraph{Reproducibility.} All code and data-build scripts that regenerate every number,
 table and figure in this paper are available at

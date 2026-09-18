@@ -257,6 +257,60 @@ def fig14_alignment_scatter(syn_perseed):
     _save(fig, "fig14_alignment_scatter")
 
 
+def fig16_eigengap_diagnostic(syn_perseed):
+    """Fig. — the online, ground-truth-free eigengap diagnostic (Sec 2.3).
+
+    (a) Per-seed eigengap (post-warm-up mean) vs. true subspace alignment: the
+    diagnostic, computed without the true channel, tracks retrospective recovery
+    quality. (b) Mean worst-case do(A) MSE for OARF-CD with and without an
+    eigengap-based fallback gate (bottom quartile by eigengap reverts to OGD),
+    against the OGD and fixed-channel OARF references.
+    """
+    gap, al, cd_wdo, ogd_wdo, oarf_wdo = [], [], [], [], []
+    for sr in syn_perseed:
+        cd = sr["rows"].get("OARF-CD", {})
+        traj = cd.get("eigengap_traj")
+        a = cd.get("channel_alignment")
+        w = cd.get("worst_do_MSE")
+        if not traj or a is None or w is None or not np.isfinite(w):
+            continue
+        g = np.array([t[1] for t in traj])
+        gap.append(float(np.mean(g[len(g) // 2:])))
+        al.append(a); cd_wdo.append(w)
+        ogd_wdo.append(sr["rows"]["OGD"]["worst_do_MSE"])
+        oarf_wdo.append(sr["rows"]["OARF"]["worst_do_MSE"])
+    gap = np.array(gap); al = np.array(al)
+    cd_wdo = np.array(cd_wdo); ogd_wdo = np.array(ogd_wdo); oarf_wdo = np.array(oarf_wdo)
+
+    thr = np.percentile(gap, 25)
+    reliable = gap >= thr
+    gated = np.where(reliable, cd_wdo, ogd_wdo)
+
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(10.4, 4.0))
+    ax1.scatter(gap, al, s=32, color=_c("OARF-CD"), alpha=0.75,
+                edgecolor="k", linewidth=0.4)
+    ax1.axvline(thr, color="k", ls=":", lw=1.0,
+                label=f"25th-pctile gate ({thr:.3f})")
+    r = np.corrcoef(gap, al)[0, 1]
+    ax1.set_xlabel(r"eigengap $\kappa$ (post-warm-up mean)")
+    ax1.set_ylabel("final subspace alignment to true channel")
+    ax1.set_title(f"Diagnostic tracks recovery ($r={r:.2f}$)")
+    ax1.legend(fontsize=7, loc="lower right")
+
+    labels = ["OGD\n(no anchor)", "OARF-CD\n(ungated)", "OARF-CD\n(gated)",
+              "OARF\n(true channel)"]
+    vals = [ogd_wdo.mean(), cd_wdo.mean(), gated.mean(), oarf_wdo.mean()]
+    colors = [_c("OGD"), _c("OARF-CD"), "#5e3c99", _c("OARF")]
+    bars = ax2.bar(labels, vals, color=colors, edgecolor="k", linewidth=0.5)
+    for b, v in zip(bars, vals):
+        ax2.text(b.get_x() + b.get_width() / 2, v, f"{v:.3f}",
+                  ha="center", va="bottom", fontsize=8)
+    ax2.set_ylabel("mean worst-case $do(A)$ MSE")
+    ax2.set_title(f"Gating on $\\kappa$: {np.sum(~reliable)}/{len(gap)} seeds"
+                  " fall back to OGD")
+    _save(fig, "fig16_eigengap_diagnostic")
+
+
 def fig7_per_regime_heatmap(syn_perseed):
     """Fig. 7 — per-regime MSE heatmap (methods x regimes), seed-averaged."""
     names = list(syn_perseed[0]["per_regime"].keys())
@@ -474,6 +528,7 @@ def main():
     fig5_immunization()
     fig6_learned_channel(syn["per_seed"])
     fig14_alignment_scatter(syn["per_seed"])
+    fig16_eigengap_diagnostic(syn["per_seed"])
     fig7_per_regime_heatmap(syn["per_seed"])
     fig8_dm_heatmap(syn["per_seed"])
 
