@@ -45,12 +45,12 @@ drivers. An optional layer estimates the channel from the data. It is unstable o
 a minority of simulated streams, and the paper proposes a diagnostic, computed
 without knowledge of the true channel, that flags those streams. Reverting to
 plain online learning on the flagged streams lowers the layer's mean worst-case
-error by about a quarter.
+error by about a quarter, although the threshold was set on the same simulations.
 
 The evidence has two parts. On a structural-causal-model benchmark with a held-out
-grid of interventions, OARF reduces worst-case interventional error by about
-two-thirds relative to reactive and distributionally robust online learners, at
-some cost in ordinary error. Stress tests and assumption-violation scenarios show
+grid of interventions, OARF more than halves the median worst-case interventional
+error of online gradient descent and cuts that of every online baseline by at least
+40\%, at some cost in ordinary error. Stress tests and assumption-violation scenarios show
 where this advantage disappears: when the driver is noisy or misspecified, or when
 regimes shift the target mechanism or the driver's variance. On sixteen years of
 daily Brent and Henry Hub data, all methods but one lie in the Model Confidence

@@ -75,19 +75,19 @@ with this manuscript.}}
 
 \begin{abstract}
 \noindent
-Most online forecasters handle an economic regime shift after it happens: they
-detect the break and recalibrate. We study forecasters that are robust in
-advance when the shift travels through an observable driver, such as a
-geopolitical-risk or policy-uncertainty index. Our method, OARF, is an online
-version of anchor regression. It penalises the part of the forecast error
-correlated with the driver and reduces to online gradient descent when the
-penalty is zero. An optional layer learns the driver. Because that estimate is
-sometimes poor, we propose a diagnostic that needs no knowledge of the true
-driver; in simulations, falling back to plain online learning on the streams it
-flags lowers the layer's mean worst-case error by about a quarter. On a
-controlled benchmark OARF cuts worst-case error by two-thirds relative to
-reactive learners. On sixteen years of energy data it is competitive with
-existing methods but not significantly better.
+Most online forecasters handle a regime shift after it happens, by detecting the
+break and recalibrating. We study forecasters that are robust in advance when
+the shift travels through an observable driver, such as a geopolitical-risk or
+policy-uncertainty index. OARF, our method, is online anchor regression: it
+penalises the part of the forecast error correlated with the driver, and with
+the penalty at zero it is online gradient descent. An optional layer learns the
+driver. Because that estimate is sometimes poor, we propose a diagnostic that
+does not need the true driver. In simulations, reverting to plain online
+learning on the streams it flags lowers the layer's mean worst-case error by
+about a quarter, with a threshold set on the same simulations. On a controlled
+benchmark OARF more than halves worst-case error relative to online gradient
+descent. On sixteen years of energy data it is competitive but not significantly
+better.
 
 \vspace{0.6em}
 \noindent\textbf{Keywords:} Online learning; Combining forecasts; Robustness; Volatility forecasting; Structural change; Econometric models; Causality.
@@ -172,8 +172,7 @@ Sections~\ref{sec:setup} and~\ref{sec:results} report the experiments. On a
 controlled SCM with a held-out intervention grid we measure interventional
 robustness against ground truth, and use stress tests to find the point at which a
 noisy or misspecified anchor makes the method worse than using no anchor. We then
-study forecast combination on sixteen years of public energy data against ten
-baselines, with Diebold--Mariano \citep{diebold1995dm} and Model Confidence Set
+study forecast combination on sixteen years of public energy data against nine baselines, with Diebold--Mariano \citep{diebold1995dm} and Model Confidence Set
 \citep{hansen2011mcs} tests.
 
 \noindent The results differ across the two settings. When shifts travel through a
@@ -185,8 +184,7 @@ Section~\ref{sec:results} show where it fails.
 
 \section{Related work}\label{sec:related}
 
-Our method draws on three literatures. Below we say what it takes from each and
-where it departs.
+
 
 \paragraph{Causal robustness and invariance.} The starting point is the observation
 that a predictor which is \emph{invariant} across environments is also robust to
@@ -222,7 +220,7 @@ method should be judged. \OARF{} tests whether, when an informative anchor is
 available, the need for reactive triggering can be partly reduced by removing the
 channel's influence before it raises the loss.
 
-\paragraph{Distributionally robust forecasting (2026).} The closest competitors are
+\paragraph{Distributionally robust forecasting.} The closest competitors are
 recent methods that, like \OARF{}, optimise an explicitly worst-case objective.
 \citet{wang2026online} propose online randomised distributionally robust forecast
 combination for dependent data. They draw combination weights from a distribution
@@ -346,7 +344,7 @@ moving average (decay $\beta$) of its sample analogue, computed on centred varia
 Subtracting the running means removes the across-regime mean component of the anchor.
 Under the SCM of Proposition~\ref{prop:equiv}, where a regime is a mean shift on $A$,
 this is the component that varies between regimes, and what remains is the
-within-regime second-moment structure used by the robustness term \eqref{eq:equiv}.
+within-regime second-moment structure used by the penalty in \eqref{eq:bar}.
 Centring does not remove the intervention itself, whose effect persists in $X$ and
 $Y$. It only keeps the slowly varying regime mean out of the covariance estimate. The
 channel-discovery layer below makes use of the across-regime mean variation that
@@ -404,8 +402,7 @@ Streaming \eqref{eq:channel} needs a proxy for ``regime''. We use a forgetting
 partition into length-$L$ blocks. A block should be long enough for a stationary
 driver's short-horizon autocorrelation to average out within it (so $L$ should exceed
 the dominant driver autocorrelation time), and short enough that actual regime changes
-fall across block boundaries. The block length $L$ is a hyperparameter selected on the
-warm-up window, and Section~\ref{sec:results} reports sensitivity to it. Let $S$ be
+fall across block boundaries. The block length $L$ is a hyperparameter selected on the warm-up window. Let $S$ be
 the across-block scatter of the block-mean context and $u$ its grand mean. The ascent
 direction is $\nabla_B\mathcal{D}=2(S-\gamma_c uu^\top)B$. At each block boundary $B$
 is updated after that step's robust gradient step and re-orthonormalised onto the
@@ -449,12 +446,11 @@ already computes. Let $\lambda_1\ge\cdots\ge\lambda_p$ be the eigenvalues of
 $M=S-\gamma_c uu^\top$ at a given block boundary (Eq.~\eqref{eq:channel}), and define
 the \emph{normalised eigengap}
 \begin{equation}\label{eq:eigengap}
- \kappa \;=\; \frac{\lambda_q-\lambda_{q+1}}{\sum_{i=1}^p|\lambda_i|+\epsilon}\in[-1,1].
+ \kappa \;=\; \frac{\lambda_q-\lambda_{q+1}}{\sum_{i=1}^p|\lambda_i|+\epsilon}\in[0,1].
 \end{equation}
 By the Davis--Kahan $\sin\Theta$ theorem, the angle between the top-$q$ eigenspace of
 an estimated symmetric matrix and that of the population matrix it estimates is
-controlled by the corresponding population eigengap. A small or negative $\kappa$
-means that the $q$-dimensional subspace $B$ is ascending is only weakly separated from
+controlled by the corresponding population eigengap. A small $\kappa$ means that the $q$-dimensional subspace $B$ is ascending is only weakly separated from
 the rest of the spectrum, so which $q$ directions are selected depends on sampling
 noise. A large $\kappa$ means the top-$q$ subspace is well separated and stably
 identified. The subspace alignment used to score the discovery layer against ground
@@ -501,7 +497,7 @@ regime-conditional. It gives no guarantee for the learned channel, and it does n
 imply low realised MSE when the anchor is wrong; the stress tests and scenarios show
 that case explicitly.
 
-We make four assumptions.
+The guarantee rests on the following assumptions.
 
 \begin{assumption}\label{ass:bounded} (Boundedness.) The standardised, winsorised
 features and anchor are bounded, so the per-step gradients of the surrogate below are
@@ -545,7 +541,7 @@ $\ \E\big[\mathrm{IntReg}_T(\rho(\xi))\big]=O\!\big((1+K)\,T^{2/3}\big)$.
 \end{enumerate}
 \end{theorem}
 \begin{proof}[Proof sketch (full proof in Appendix~\ref{app:proof})]
-Three steps. (1) $\mathcal{R}_t$ is convex and, by Proposition~\ref{prop:equiv}, equals
+(1) $\mathcal{R}_t$ is convex and, by Proposition~\ref{prop:equiv}, equals
 the anchor-penalised risk within a regime; the update direction is
 $\nabla\mathcal{R}_t(w_t)+\zeta_t$, where $\zeta_t$ splits into a zero-mean martingale part
 $M_t$ (one-sample gradient noise) and a deterministic part $b_t$ (EMA moment-estimation
@@ -564,8 +560,7 @@ The gap between (i) and (ii) is the cost of learning the robustness geometry onl
 without changepoint detection. A detection-and-reset estimator could reduce the moment
 error at the $O(1/\sqrt{n})$ within-regime rate and recover (i), but it would
 reintroduce the triggers \OARF{} is designed to avoid. The $T^{2/3}$ rate is what a
-proactive, exponentially forgetting estimator pays, and it is still sublinear. There
-is one mismatch between theory and practice. The theorem applies to the Ader-wrapped
+proactive, exponentially forgetting estimator pays, and it is still sublinear. The theorem applies to the Ader-wrapped
 version, while the experiments use a single AdaGrad instance, so the algorithm we run
 is not exactly the one we analyse. AdaGrad keeps per-coordinate adaptive steps but
 drops the $K$-adaptivity of the Ader wrapper, which is what makes the bound hold for
@@ -580,7 +575,7 @@ AdaGrad as a simpler stand-in.
 \end{remark}
 
 \begin{remark}[Scope of the guarantee]\label{rem:honesty}
-Two qualifications apply. First, risk-adjusted no-regret is attainable only under
+First, risk-adjusted no-regret is attainable only under
 stochastic, stationary or ergodic data, and not against a fully adversarial
 environment \citep{uziel2017growth}. For this reason $\mathcal{W}$ is
 regime-conditional, and observable regime drivers must enter the statement, since they
@@ -595,8 +590,7 @@ We evaluate \OARF{} in two settings. A synthetic structural causal model provide
 truth: we can intervene on the anchor by construction and so measure interventional
 robustness directly. A sixteen-year study on real economic series then tests whether
 the gains carry over to data with no ground-truth intervention and a milder regime
-structure. The synthetic study is meant to show why the method should help; the real
-study tests whether it does.
+structure. 
 
 \paragraph{Synthetic anchor-SCM.}
 The synthetic generator (Table~\ref{tab:scm}) is built so that the gap between
@@ -683,7 +677,7 @@ Series & Source / ticker & Span (daily) & Role\\
 \midrule
 Brent crude & FRED \texttt{DCOILBRENTEU} & 2010--2026 & target (log variance proxy)\\
 Henry Hub gas & FRED \texttt{DHHNGSP} & 2010--2026 & target (log variance proxy)\\
-VIX & FRED \texttt{VIXCLS} & 2010--2026 & driver (level + change)\\
+VIX & FRED \texttt{VIXCLS} & 2010--2026 & driver / anchor\\
 EUR/USD & FRED \texttt{DEXUSEU} & 2010--2026 & driver\\
 10y Treasury & FRED \texttt{DGS10} & 2010--2026 & driver\\
 Geopolitical Risk & Caldara--Iacoviello \citep{caldara2022gpr} & 2010--2026 & driver / anchor\\
@@ -721,13 +715,10 @@ distributionally robust methods are randomised Wasserstein combination
 \citep{wang2026online}, the variance- and ES-scaled exponential-weight combiners
 \citep{liu2026fcdro}, Wasserstein online learning \citep{chen2026wdro} and cost-aware
 conformal inference \citep{costaci2026}. They are the closest comparison, because they
-also optimise a worst-case objective. They differ from \OARF{} only in the shape of
-the set they hedge over, an agnostic ball in place of an anchor-shaped ellipsoid, so
-this comparison isolates the value of the anchor geometry. Finally, the batch
+also optimise a worst-case objective. They differ from \OARF{} mainly in the shape of the set they hedge over, an agnostic ball in place of an anchor-shaped ellipsoid, so this comparison bears on the value of the anchor geometry. Finally, the batch
 causal-robust estimators, anchor regression \citep{rothenhausler2021anchor} and DRIG
 \citep{shen2023drig}, use the same invariance principle as \OARF{}, but offline and
-with the channel supplied. They serve as an oracle upper bound for the online,
-channel-learning version. All methods are run under the same protocol, with
+with the channel supplied. They are offline references. Anchor regression, which is given the true anchor, is the natural best case for the fixed-channel online method. All methods are run under the same protocol, with
 AdaGrad-stabilised steps where applicable. Appendix~\ref{app:baselines} gives, for
 each baseline, the loss it optimises, its update rule, its output type, whether it is
 online, rolling or batch, and whether it uses the anchor.
@@ -787,9 +778,7 @@ the ablations over $16$ seeds and the scenario and selector experiments over $8$
 seeds; each table states its own count. Real-data numbers are averages over three
 rolling origins. The real panel ends on 22 June 2026, the 2026 data are complete up to
 that date, and the evaluation window is the post-warm-up remainder. Real-data regimes
-are defined without look-ahead as terciles of a past-only volatility-stress index
-$s_t$, the lagged $20$-day mean of the standardised log variance proxy, split at its
-in-sample $33/67\%$ quantiles into calm, normal and turbulent states; the
+are terciles of a volatility-stress index $s_t$, the lagged $20$-day mean of the standardised log variance proxy, split at its full-sample $33/67\%$ quantiles into calm, normal and turbulent states. The labels are used only to score forecasts and are never seen by any method; the
 regime-aware metrics also cover the transitions between these states. Results are
 qualitatively unchanged under a two-state median split. All hyper-parameters are
 listed in Table~\ref{tab:hyper} and were fixed a priori or selected once on the
@@ -823,6 +812,8 @@ warm-up & fraction reserved for warm-up/HP & $0.2$\\
 \end{table}
 
 \section{Results}\label{sec:results}
+
+The experiments below use between $8$ and $50$ seeds, and some report medians while others report means, so the absolute worst-case error of the same method differs between tables. Comparisons are meant within a table.
 
 \paragraph{Synthetic benchmark.}
 Table~\ref{tab:syn} and Figures~\ref{fig:rolling}--\ref{fig:immun} report the controlled
@@ -983,12 +974,10 @@ uses this as a gate. When a seed's average post-warm-up $\kappa$ lies in the bot
 quartile (only~$13$ of $50$ seeds), the forecaster reverts to plain OGD; otherwise it
 keeps the learned channel. Gating lowers the mean worst-$\doop(A)$ MSE of \OARFCD{} from
 $0.147$ (ungated) to $0.113$, a reduction of about a quarter, and closes about two-fifths
-of the gap to the $0.059$ attained with the true channel. The gate uses only a statistic
-the discovery layer already computes, but it has three limits. The threshold is the
+of the gap to the $0.059$ attained with the true channel. The gate uses only a statistic the discovery layer already computes. Its threshold, however, is the
 $25$th percentile of $\kappa$ across these same $50$ seeds, so in deployment it would
 have to be calibrated in advance, for example on simulated streams. The decision uses
-the average of $\kappa$ over the second half of each stream, so it is a per-stream
-choice and not a step-by-step switch. And the gate discards a misspecified channel
+the average of $\kappa$ over the second half of each stream, so the gate makes one choice per stream. It also discards a misspecified channel
 instead of correcting it; like Davis--Kahan, a large gap certifies a well-identified
 subspace but says nothing about whether that subspace is exogenous.
 
@@ -1010,8 +999,7 @@ interventional robustness comes from the anchor channel. With the true channel t
 worst-case interventional error is $0.080$. With a random channel it rises to $0.377$,
 which is worse than using no anchor penalty at all (OGD, $0.226$). A wrong channel
 therefore does active harm, so identifying the right channel is the main problem; the
-stress tests below measure the same effect continuously. The learned channel ($0.303$,
-alignment $0.84$) is close to the OGD baseline on average and, as Table~\ref{tab:syn}
+stress tests below measure the same effect continuously. The learned channel ($0.303$, alignment $0.84$) is worse than OGD on average in this experiment and, as Table~\ref{tab:syn}
 shows, unstable across seeds. AdaGrad matters for both accuracy and robustness: a tuned
 fixed step raises in-regime MSE from $0.035$ to $0.095$ and worst-$\doop(A)$ from $0.080$
 to $0.145$. EMA centring improves in-regime accuracy ($0.035$ vs.\ $0.043$) with
@@ -1050,8 +1038,7 @@ learned channel (\OARFCD{}, alignment $0.84$) & $0.033$ & $0.303$\\
 \includegraphics[width=0.99\textwidth]{fig11_ablations.png}
 \caption{Ablations. (a) Sensitivity to the EMA decay $\beta$. (b) Component knock-outs by
 worst-case interventional MSE: the channel and the adaptive step matter most, and a
-random channel is worse than none. (c) Discovered-channel dimension: robustness and
-alignment both improve with $q$ and are already strong at the true $q=2$ (dotted).}
+random channel is worse than none. (c) Discovered-channel dimension: robustness and alignment both improve slightly with $q$ (true $q=2$ dotted), but worst-case error stays above OGD at every $q$.}
 \label{fig:abl}
 \end{figure}
 \paragraph{Stress tests.}
@@ -1069,10 +1056,7 @@ alignment $\cos\theta$). \OARF{} beats OGD while the alignment exceeds about $0.
 reaching $0.36$ against OGD's $0.19$ when the channel is orthogonal; the random-channel
 row of Table~\ref{tab:abl} reflects the same mechanism. \OARF{} should therefore be
 deployed only when the analyst has reason to believe the anchor is informative, that
-is, with alignment well above $0.6$ and noise below order one. When the channel is
-weak, noisy or guessed, anchoring can make forecasts worse. Its use should then be
-gated by a diagnostic for noise-only or unstable discovery, for example by monitoring
-whether the learned channel stabilises.
+is, with alignment well above $0.6$ and noise below order one. A weak or guessed channel can make forecasts worse than using no anchor.
 
 \begin{figure}[htbp]
 \centering
@@ -1129,12 +1113,7 @@ budget: the channel is estimated on the warm-up block only, with no look-ahead
 (Table~\ref{tab:sel}). The alternatives are a supervised residual--context-coupling
 selector, stationary PCA of the context, and a random channel. Each is scored by its
 alignment to the truth and by the worst-$\doop(A)$ MSE of the resulting fixed-channel
-method. The block-mean rule is competitive with the supervised selector and clearly
-better than stationary PCA, so the choice is reasonably motivated. From a short warm-up,
-however, no unsupervised selector reliably separates from the random channel
-($0.10$--$0.12$ worst-$\doop(A)$ MSE vs.\ random $0.12$, against the true channel's
-$0.07$). High alignment is reached only by learning over the full stream (\OARFCD{},
-alignment $0.84$ in Table~\ref{tab:syn}), and even then the estimate is unstable.
+method. The block-mean rule does about as well as the supervised selector and much better than stationary PCA. From a short warm-up, though, neither is clearly better than a random channel: their worst-$\doop(A)$ MSEs are $0.101$ and $0.093$ against $0.115$ for a random channel and $0.070$ for the true one, and their alignments ($0.42$ and $0.37$) are no higher than the random channel's ($0.43$). High alignment is reached only by learning over the full stream (\OARFCD{}, alignment $0.84$ in Table~\ref{tab:abl}), and even then the estimate is unstable.
 Reliable online anchor discovery from limited data thus remains an open problem.
 Practitioners should supply a candidate anchor and validate it with the procedure
 below instead of relying on automatic discovery alone.
@@ -1169,12 +1148,7 @@ perturbing the anchor artificially as in Figure~\ref{fig:stress}, and confirm th
 anchoring improves validation worst-regime loss without an unacceptable
 in-distribution cost; (4) for \OARFCD{}, monitor whether the learned subspace
 stabilises and aligns with interpretable drivers, and fall back to a fixed anchor or to
-$\xi=0$ (plain OGD) if it does not. These steps make the method's dependence on the
-anchor an explicit precondition that can be checked. The resulting decision rule is a
-\emph{gating} procedure: fixed-channel \OARF{} is deployed only if a chosen or learned
-channel passes the stability and validation diagnostics above. If the learned channel
-is unstable, or validation worst-regime loss is no better than plain OGD/ACI, we fall
-back to OGD/ACI instead of running a robust update on a channel we cannot trust.
+$\xi=0$ (plain OGD) if it does not. The checklist below summarises the resulting decision rule.
 
 \begin{center}
 \fbox{\begin{minipage}{0.92\linewidth}
@@ -1193,23 +1167,12 @@ diagnostic only, and do not deploy its channel unless it passes these checks.
 \end{center}
 
 \paragraph{Real data.}
-The energy panel (Table~\ref{tab:real}) serves as an out-of-sample check of whether the
-mechanism carries over to messy data; we do not use it to claim that \OARF{} is
-superior. On both targets the $10\%$ Model Confidence Set retains $10$ of the $11$
-methods, each with an MCS $p$-value of $1.00$, and excludes only M-FISHER ($p=0.008$ on
-Brent). The Expected-Shortfall combiner is the next weakest but is retained ($p=0.22$ on
-Brent). Since the retained methods are statistically indistinguishable, the small
-numerical differences in Table~\ref{tab:real} carry no inferential weight, and we build
-no claim on them. On real daily energy variance-proxy forecasting, \OARF{} is
-statistically indistinguishable from the strongest baselines and broadly competitive
-across metrics. The public daily data give no statistically significant evidence that
-any method, \OARF{} included, performs best. The most likely reason is that real energy
+The energy panel (Table~\ref{tab:real}) checks whether the mechanism carries over to real series. On both targets the $10\%$ Model Confidence Set retains $10$ of the $11$ methods and excludes only M-FISHER ($p=0.008$ on Brent). Every retained method has an MCS $p$-value of $1.00$ except the Expected-Shortfall combiner ($p=0.22$ on Brent), so the differences among retained methods in Table~\ref{tab:real} are not significant, and \OARF{} is competitive with the strongest baselines without being better than them. The most likely reason is that real energy
 variance has weaker, noisier driver--residual coupling than the controlled SCM. The
 stress tests above predict that the anchor advantage shrinks toward zero in that
-setting, so a null result here is consistent with our mechanism. The conformal head's
-coverage is near nominal ($0.90$). A decision-economic vol-timing check is reported in
-the appendix: over this sample the risk-targeting Sharpe ratios are low and
-statistically indistinguishable across methods, so this check adds no evidence either.
+setting, which is what we observe. The conformal head's
+coverage is near nominal ($0.90$). A decision-economic volatility-timing check in the appendix finds that over this sample the risk-targeting Sharpe ratios are low and
+statistically indistinguishable across methods.
 An event study around the COVID-19 crash and the 2022 energy shock
 (Appendix~\ref{app:events}) gives the same picture for dated episodes. \OARF{} holds
 the anchor--residual correlation below OGD's in every window, but it has a loss
@@ -1220,7 +1183,7 @@ yet too weakly coupled to give a dependable gain.
 \centering
 \caption{Real energy log daily-variance-proxy combination, 2010--2026 evaluation window
 (lower is better). Ten of the eleven methods lie within the 10\% Model Confidence Set
-(each MCS $p=1.00$); only M-FISHER is excluded ($p=0.008$ on Brent). The differences
+(MCS $p=1.00$ for all but the Expected-Shortfall combiner, $p=0.22$ on Brent); only M-FISHER is excluded ($p=0.008$ on Brent). The differences
 among the retained methods are not statistically significant and are reported
 descriptively.}
 \label{tab:real}
@@ -1258,8 +1221,7 @@ worst-regime MSE by method (right).}
 \centering
 \includegraphics[width=0.6\textwidth]{fig13_dm_DCOILBRENTEU.png}
 \caption{Brent: pairwise Diebold--Mariano statistics (negative = row more accurate
-than column). Most pairs are small in magnitude, consistent with the Model Confidence
-Set retaining all methods.}
+than column). Most pairs are small in magnitude, consistent with the Model Confidence Set retaining ten of the eleven methods.}
 \label{fig:real-dm}
 \end{figure}
 
@@ -1268,7 +1230,7 @@ The two Model Confidence Set analyses show what the evidence supports. On the sy
 benchmark, the set computed on in-distribution loss (over 16 seeds) retains the
 batch and conformal methods (Rolling-OLS in all 16 seeds, DRIG in 15, the conformal
 heads in 11) and excludes fixed-channel \OARF{} (retained in 0 seeds) and \OARFCD{}
-(1 seed). This is the expected outcome. \OARF{} gives up some in-distribution accuracy
+(1 seed), because \OARF{} gives up some in-distribution accuracy
 in exchange for interventional robustness, which in-distribution loss does not reward;
 the relevant evaluation for \OARF{} is the held-out intervention grid. On the real
 targets the MCS retains $10$ of $11$ methods on each commodity (only the weakest is
@@ -1297,39 +1259,28 @@ protection isotropically, while anchoring concentrates it on the directions in w
 the regime moves. The concentration helps only to the extent that those directions are
 correctly identified.
 
-\paragraph{When \OARF{} helps and when it hurts.} The mechanism that helps under a good
-anchor also hurts under a bad one, so we list the operating conditions below.
-
-\begin{center}
-\fbox{\begin{minipage}{0.93\columnwidth}\small
-\textbf{\OARF{} is likely to help when} the anchor is exogenous or nearly so; regime
-shifts are mainly mean shifts in the anchor; the anchor is observed with no more than
-moderate noise; and the anchor--residual coupling is stable enough to estimate online
-(channel alignment $\gtrsim 0.6$).\\[2pt]
-\textbf{\OARF{} is likely to hurt (do worse than plain OGD) when} the anchor is
-misspecified or weakly aligned; the main regime driver is unobserved; shifts are not
-anchor-mediated (e.g.\ the target mechanism or the variance of the anchor shifts); the
-learned channel is unstable; or the stream is too short, or regimes change faster than
-the EMA window can track.\\[2pt]
-\textbf{Safeguard.} Monitor channel stability and the anchor--residual coupling online,
-and fall back to $\xi=0$ (plain OGD) when they point to a weak or shifting channel. For
-the learned channel, gate on the eigengap $\kappa$ of Eq.~\eqref{eq:eigengap}. It needs
-no ground truth and tracks true recovery, and in our experiments it cuts the learned
-channel's mean worst-case error by about a quarter.
-\end{minipage}}
-\end{center}
+\paragraph{Scope.}
+The mechanism that helps under a good anchor also hurts under a bad one. \OARF{} is
+likely to help when the anchor is close to exogenous, regimes are mainly mean shifts
+in the anchor, the anchor is observed with at most moderate noise, and its alignment
+with the true channel is above about $0.6$. It is likely to do worse than plain OGD
+when the anchor is misspecified or weakly aligned, when shifts act on the target
+mechanism or on the variance of the anchor, when the learned channel is unstable, or
+when the stream is too short or regimes change faster than the EMA window can track. The checklist in
+Section~\ref{sec:results} turns these conditions into a pre-deployment test, and for
+the learned channel the eigengap $\kappa$ of Eq.~\eqref{eq:eigengap} gives an online
+check; in our simulations reverting to OGD on the streams it flags cut the learned
+channel's mean worst-case error by about a quarter, with a threshold set on the same
+simulations.
 
 \paragraph{Conclusion.} Online anchor regression with a fixed channel gives proactive
 robustness to regime shifts, backed by a fixed-anchor interventional-regret guarantee.
 This holds only when the anchor behaves like an exogenous variable, is informative and
 is observed with moderate noise, and only for mean-shift regimes. Outside those
-conditions the method brings no benefit and can do harm. On sixteen years of daily
-energy variance-proxy forecasting every retained method lies in the Model Confidence
-Set, which is what our stress tests predict for a weak, noisy channel.
+conditions the method brings no benefit and can do harm. On sixteen years of daily energy variance-proxy forecasting, ten of the eleven methods lie in the Model Confidence Set, which is what our stress tests predict for a weak, noisy channel.
 
-We have not solved online discovery of the anchor channel. The block-mean rule is
-reasonable but unstable, and on short data no unsupervised selector beats a random
-channel, so automatic anchor discovery remains open. We made progress on a narrower
+Online discovery of the anchor channel remains open. The block-mean rule is
+reasonable but unstable, and on short data no selector does clearly better than a random channel. We made progress on a narrower
 question that matters more for deployment: knowing when not to trust the discovered
 channel. The eigengap diagnostic of Eq.~\eqref{eq:eigengap} is a partial
 answer. It flags unreliable recovery without certifying that a well-identified subspace
@@ -1339,7 +1290,7 @@ In practice, \OARF{} should be used with diagnostics: propose a candidate anchor
 validate it on a warm-up stress test, and fall back to plain online learning when the anchor, or the stability diagnostic of the discovered
 channel, shows that it is weak or unstable.
 
-\OARF{} does not dominate all online forecasters. Our contributions are (i) a
+The contributions are (i) a
 leak-free streaming form of anchor regression with a fixed-anchor interventional-regret
 guarantee; (ii) an evaluation protocol for online forecasting based on
 interventional regret; (iii) a diagnostic
@@ -1512,8 +1463,7 @@ AdaGrad model on the controlled anchor-SCM (true fixed channel, $\xi=6$, $12$ se
 The Ader variant is a pool of five gradient-descent experts that follow the same
 anchor-robust surrogate gradient with a geometric ladder of step sizes. Each expert is
 projected onto the comparator ball, and a Hedge meta-learner combines them.
-Table~\ref{tab:ader} reports the results. Both step rules cut the worst-case $\doop(A)$
-error to roughly a third of the no-anchor OGD floor, and their per-seed worst-case
+Table~\ref{tab:ader} reports the results. Both step rules cut the worst-case $\doop(A)$ error well below the no-anchor OGD reference, to about a third (AdaGrad) and a half (Ader) of it, and their per-seed worst-case
 errors are strongly rank-correlated (Spearman $\rho=0.80$). In this experiment AdaGrad
 is slightly more accurate and has lower variance. It also has fewer parameters, and for
 these reasons it is the rule we deploy; the Ader wrapper is the object the theorem
@@ -1523,7 +1473,7 @@ analyses. Substituting one for the other leaves the qualitative ranking unchange
 \centering
 \caption{Ader-wrapped versus AdaGrad \OARF{} on the synthetic anchor-SCM ($12$ seeds,
 true fixed channel, $\xi=6$; median with $[\,q_{25},q_{75}\,]$). Both reach similar
-worst-case interventional error, far below the OGD floor, and their per-seed worst-case
+worst-case interventional error, far below the OGD reference, and their per-seed worst-case
 errors are rank-correlated at Spearman $\rho=0.80$.}
 \label{tab:ader}
 \small
@@ -1541,7 +1491,7 @@ OGD ($\xi=0$, reference) & $0.019$ & $0.143\,[0.065,0.353]$\\
 
 \section{Event study: COVID-19 and the 2022 energy shock}\label{app:events}
 The regime-tercile analysis in the main text is aggregate, so here we examine two dated
-episodes. We run fixed-anchor \OARF{} ($\xi=1.5$) and the no-anchor OGD floor on the
+episodes. We run fixed-anchor \OARF{} ($\xi=1.5$) and the no-anchor OGD reference on the
 real combination stream. Within each event window we plot the cumulative squared-loss
 gap (\OARF{} minus OGD, so a negative value means \OARF{} is ahead) and, for both
 methods, the smoothed anchor--residual correlation $|\mathrm{corr}(a_t,r_t)|$
