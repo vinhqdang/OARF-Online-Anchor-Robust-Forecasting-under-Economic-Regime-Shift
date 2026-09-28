@@ -7,8 +7,8 @@ volatility) toward zero. This fixed-channel method (OARF) is the part with a
 proof; a separate exploratory add-on (OARF-CD) attempts to **discover that
 channel online** instead of being handed it, and carries its own online,
 ground-truth-free reliability diagnostic (an eigengap statistic) that flags when
-the discovered channel should not be trusted and the fixed-channel update should
-be used instead. The target guarantee is a new object, *interventional regret*:
+the discovered channel should not be trusted, in which case the forecaster
+reverts to plain online gradient descent. The target guarantee is a new object, *interventional regret*:
 regret against the best regime-conditional predictor under the worst-case
 bounded future intervention on the regime driver.
 
@@ -73,11 +73,11 @@ The two experiments answer different questions and the paper is explicit about i
   the *batch* causal oracle while remaining fully online. The channel-discovery
   layer recovers the true intervention subspace *on average* (mean alignment
   **0.88**, random baseline 0.42), but a minority of seeds settle on a poorly
-  identified channel and drive a heavy-tailed worst-case cost; gating the
-  learned channel on its own eigengap diagnostic (no ground truth used) catches
-  most of that minority and recovers roughly a quarter of the mean worst-case
-  error the ungated learned channel gives up. This is where the mechanism, and
-  its practical safeguard, are demonstrated decisively.
+  identified channel and drive a heavy-tailed worst-case cost. Reverting to
+  plain OGD on the seeds whose eigengap diagnostic (no ground truth used) is in
+  the bottom quartile lowers the learned channel's mean worst-case do(A) MSE
+  from 0.147 to 0.113. The quartile threshold is set on the same 50 seeds, so it
+  would need calibrating in advance in a real deployment.
 
 * **Real (deployment).** Sixteen years (2010–2026) of daily public data, framed
   as one-step-ahead **log realised-variance** forecasting (predictable and
