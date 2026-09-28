@@ -49,7 +49,7 @@ cd manuscript && pdflatex titlepage_ijf
 | `oarf/figures.py` | Figures 1–16 (§7), incl. the eigengap-diagnostic figure | ✅ |
 | `download_data.py` | Scriptable download of the public panel | ✅ |
 | `run_synthetic.py`, `run_real.py` | End-to-end experiments | ✅ |
-| `manuscript/` | `manuscript.tex` (generic/Springer-style single file) and, for submission to the *International Journal of Forecasting* (Elsevier, double-anonymized review), `manuscript_ijf.tex` (anonymized body, `elsarticle.cls`, author-year citations, 100–150-word abstract, IJF declarations) + `titlepage_ijf.tex` (author/affiliation, submitted as a separate file) + `references.bib` | ✅ |
+| `manuscript/` | `manuscript.tex` (generic/Springer-style single file) and, for submission to the *International Journal of Forecasting* (Elsevier, double-anonymized review), `manuscript_ijf.tex` (anonymized body, `elsarticle.cls`, author-year citations, 100–150-word abstract, IJF declarations) + `titlepage_ijf.tex` (author/affiliation, submitted as a separate file); for the *Journal of Forecasting* (Wiley, single-blind, free format), `manuscript_jof.tex` (author details included, author-year references); plus `references.bib` | ✅ |
 
 ### Baselines (§5)
 Floors — **OGD** (= OARF with ξ=0), **Rolling-OLS**, **ACI**.

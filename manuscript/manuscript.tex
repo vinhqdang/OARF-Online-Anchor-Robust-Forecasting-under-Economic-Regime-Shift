@@ -778,7 +778,9 @@ qualitatively unchanged under a two-state median split. All hyper-parameters are
 listed in Table~\ref{tab:hyper} and were fixed a priori or selected once on the
 warm-up block. The held-out intervention grid is used only for evaluation, never to tune $\xi$ or any other parameter.
 
-One data-preparation step on the real panel uses full-sample information: the driver series are centred and scaled with their full-sample mean and standard deviation before they enter the stream. For the learners this makes no difference after the first few warm-up observations, because each learner re-standardises its inputs with past-only statistics, and that transform does not change under an affine rescaling of its input. It does affect the regularised-regression member of the forecast pool, whose ridge penalty acts on the pre-scaled drivers, so the strength of its penalty uses full-sample scale information. This is a mild departure from a strictly past-only protocol, and the reported runs include it. Because every method combines the same pool, it affects all methods alike.
+One data-preparation step on the real panel uses full-sample information: the driver series are centred and scaled with their full-sample mean and standard deviation before they enter the stream. For the learners this makes no difference after the first few warm-up observations, because each learner re-standardises its inputs with past-only statistics, and that transform does not change under an affine rescaling of its input. It does affect the regularised-regression member of the forecast pool, whose ridge penalty acts on the pre-scaled drivers, so the strength of its penalty uses full-sample scale information. This is a mild departure from a strictly past-only protocol, and the reported runs include it. Because every method combines the same pool, it affects all methods alike. Parts of the analysis code were written with the help of an AI
+coding assistant (see the acknowledgments); all of it is public and regenerates
+every reported number.
 
 \begin{table}[htbp]
 \centering
@@ -1530,11 +1532,10 @@ Public data sources and the code that regenerates every number, table and
 figure in this paper (see Reproducibility, above) are publicly available.
 
 \section*{Declaration of generative AI and AI-assisted technologies in the manuscript preparation process}
-During the preparation of this work, the author used an AI-based writing
-assistant to help draft and revise text and improve the clarity of exposition,
-following the author's direction and intent. After using this tool, the
-author reviewed, verified and edited all content and takes full
-responsibility for the content of the published article.
+The author used Claude (Anthropic) between June and September 2026 to help
+write the analysis code and to edit the text of the manuscript. The author
+reviewed and revised all code and text and takes full responsibility for the
+content of this article.
 
 \small
 \bibliographystyle{plainnat}
