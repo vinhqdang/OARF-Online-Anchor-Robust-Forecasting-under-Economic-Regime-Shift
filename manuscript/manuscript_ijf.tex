@@ -268,11 +268,7 @@ base models. A linear predictor with feature map
 $\phi(x)=[1;x]\in\R^{d+1}$ and weights $w$ emits $\hat y_t=w^\top\phi(x_t)$, incurs
 the squared loss $\ell_t(w)=(y_t-\hat y_t)^2$, and writes its residual
 $r_t=y_t-\hat y_t$. The \emph{anchor} is a (possibly learned) linear read-out of the
-context, $a_t=B^\top z_t\in\R^q$, with channel matrix $B\in\R^{p\times q}$. The
-pipeline is leak-free. At step $t$ we first predict from $x_t$, then reveal
-$y_t$ and update, and every standardisation uses past-only statistics. When we later
-evaluate a frozen learner on held-out interventions, we replay the same frozen,
-past-only standardiser, so no future information enters a forecast.
+context, $a_t=B^\top z_t\in\R^q$, with channel matrix $B\in\R^{p\times q}$. The learning protocol is sequential. At step $t$ we first predict from $x_t$, then reveal $y_t$ and update, and each learner standardises its inputs with past-only statistics. When we later evaluate a frozen learner on held-out interventions, we replay the same frozen standardiser. Section~\ref{sec:setup} notes one data-preparation step on the real panel that uses full-sample constants.
 
 \paragraph{Objective}
 Following anchor regression \citep{rothenhausler2021anchor}, \OARF{} trades
@@ -691,9 +687,7 @@ features of volatility. HAR encodes long-memory persistence, the EWMA and GARCH 
 capture short-run clustering with different decay structures, and the VIX signal adds
 cross-asset information that the autoregressive models miss. No single member
 dominates across regimes, which is why combining them is worthwhile, and this is the
-setting for which the 2026 distributionally robust combiners were proposed. Every
-member of the pool is strictly causal: the forecast for day $t$ is computed from
-information available through $t-1$.
+setting for which the 2026 distributionally robust combiners were proposed. Each member forecasts day $t$ from data through $t-1$; the protocol paragraph below notes one qualification for the regularised regression.
 
 \paragraph{Baselines}
 We compare against eleven methods, grouped by the question each answers about \OARF{}
@@ -747,7 +741,7 @@ AnchorReg / DRIG & '21/'23 & causal (batch) & anchor / environments & windowed\\
 \end{table}
 
 \paragraph{Forecast output} Every method produces a one-step point forecast and is
-scored by the same squared loss under the same leak-free protocol. The linear learners
+scored by the same squared loss under the same protocol. The linear learners
 (\OARF{}, \OARFCD{}, OGD, Rolling-OLS, W-DRO-OL) and the combination methods
 (DR-Combo, FC-DRO/-ES) output $w_t^\top\phi(x_t)$ directly. The conformal methods use
 a quantile read-out. ACI and CostACI maintain $5/50/95\%$ pinball heads and take the
@@ -776,8 +770,9 @@ are terciles of a volatility-stress index $s_t$, the lagged $20$-day mean of the
 regime-aware metrics also cover the transitions between these states. Results are
 qualitatively unchanged under a two-state median split. All hyper-parameters are
 listed in Table~\ref{tab:hyper} and were fixed a priori or selected once on the
-warm-up block. The held-out intervention grid is used only for evaluation, never to
-tune $\xi$ or any other parameter, and no future information enters any forecast.
+warm-up block. The held-out intervention grid is used only for evaluation, never to tune $\xi$ or any other parameter.
+
+One data-preparation step on the real panel uses full-sample information: the driver series are centred and scaled with their full-sample mean and standard deviation before they enter the stream. For the learners this makes no difference after the first few warm-up observations, because each learner re-standardises its inputs with past-only statistics, and that transform does not change under an affine rescaling of its input. It does affect the regularised-regression member of the forecast pool, whose ridge penalty acts on the pre-scaled drivers, so the strength of its penalty uses full-sample scale information. This is a mild departure from a strictly past-only protocol, and the reported runs include it. Because every method combines the same pool, it affects all methods alike.
 
 \begin{table}[htbp]
 \centering
@@ -1285,7 +1280,7 @@ validate it on a warm-up stress test, and fall back to plain online learning whe
 channel, shows that it is weak or unstable.
 
 The contributions are (i) a
-leak-free streaming form of anchor regression with a fixed-anchor interventional-regret
+streaming form of anchor regression whose updates use only past data with a fixed-anchor interventional-regret
 guarantee; (ii) an evaluation protocol for online forecasting based on
 interventional regret; (iii) a diagnostic
 that needs no ground truth and lets a deployed system detect an unreliable discovered
@@ -1407,7 +1402,7 @@ are economically small and not statistically significant over this sample.}
 \section{Baseline implementations and notes}\label{app:baselines}
 Table~\ref{tab:baseimpl} lists, for each method, the loss optimised, the update rule
 and the output, whether the method runs online, rolling or in batch, and whether it uses
-the anchor. All methods run under the same leak-free protocol with the hyper-parameters
+the anchor. All methods run under the same protocol with the hyper-parameters
 of Table~\ref{tab:hyper}. Per step, the linear methods cost $O(d)$ and \OARF{} adds
 $O(pq+q^3)$ for the anchor block. Rolling-OLS and the batch methods cost $O(d^3)$ at
 each refit, which takes place every $5$--$10$ steps.

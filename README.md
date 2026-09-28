@@ -12,7 +12,7 @@ reverts to plain online gradient descent. The target guarantee is a new object, 
 regret against the best regime-conditional predictor under the worst-case
 bounded future intervention on the regime driver.
 
-This repository contains the full implementation, the leak-free evaluation
+This repository contains the full implementation, the sequential evaluation
 harness, the data-build scripts, the figure code, and a Springer-formatted
 manuscript. Every number and figure in the paper is reproducible from source.
 
@@ -43,7 +43,7 @@ cd manuscript && pdflatex titlepage_ijf
 |---|---|---|
 | `oarf/synthetic.py` | Canonical anchor-SCM (parents/children) + held-out `do(A:=ν)` grid | ✅ |
 | `oarf/models.py` | **OARF** (§2.2), **online channel discovery** (§2.3), and all baselines (§5) | ✅ |
-| `oarf/evaluate.py` | Leak-free walk-forward, full metric battery (§6), Diebold–Mariano, Model Confidence Set | ✅ |
+| `oarf/evaluate.py` | Sequential walk-forward, full metric battery (§6), Diebold–Mariano, Model Confidence Set | ✅ |
 | `oarf/online.py` | Past-only winsorised standardiser, EMA, AdaGrad step | ✅ |
 | `oarf/load_panel.py` | FRED / GPR / EPU loader, HAR/GARCH experts, vol regimes (§3–4) | ✅ |
 | `oarf/figures.py` | Figures 1–16 (§7), incl. the eigengap-diagnostic figure | ✅ |
@@ -109,8 +109,12 @@ All public, citation-requested. `download_data.py` fetches them into `data/`:
 `run_synthetic.py` writes `results/synthetic/metrics.json` (+ per-seed detail);
 `run_real.py` writes `results/real/metrics.json` (+ per-target detail);
 `oarf/figures.py` reads those and writes `figures/*.{pdf,png}`. Seeds are fixed,
-the protocol is strictly leak-free (predict → reveal → update; past-only
-standardisation replayed frozen on the held-out grid).
+and the learning protocol is sequential (predict → reveal → update; past-only
+standardisation replayed frozen on the held-out grid). One exception: in
+`oarf/load_panel.py` the real-data driver series are pre-scaled with full-sample
+mean and standard deviation. The learners re-standardise with past-only
+statistics, so this only matters for the ridge member of the forecast pool,
+whose penalty then uses full-sample scale; the manuscript states this.
 
 ## Licence
 
