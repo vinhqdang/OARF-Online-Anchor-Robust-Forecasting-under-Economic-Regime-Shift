@@ -48,8 +48,12 @@ def run_stream(model, X, Z, Y, record_weights=False, eval_start=0,
     std_y = OnlineStandardizer(1) if standardize_y else None
     quants = np.empty((T, 3)) if getattr(model, "produces_quantiles", False) else None
     w_path = [] if record_weights else None
+    mu_t = np.zeros(T)
+    sd_t = np.ones(T)
     for t in range(T):
         x, z, y = X[t], Z[t], Y[t]
+        if standardize_y:
+            mu_t[t], sd_t[t] = float(std_y.mean[0]), float(std_y.std[0])
         if quants is not None:
             quants[t] = model.predict_quantiles(x, z)
             yhat[t] = quants[t, 1]
@@ -71,10 +75,35 @@ def run_stream(model, X, Z, Y, record_weights=False, eval_start=0,
         name=model.name, yhat=yhat, y=y_used, resid=resid, sq_err=resid ** 2,
         quantiles=quants,
         w_path=np.array(w_path) if record_weights else None,
-        extras={"std_y": std_y.freeze() if standardize_y else None},
+        extras={"std_y": std_y.freeze() if standardize_y else None,
+                "mu_t": mu_t, "sd_t": sd_t},
     )
     return res
 
+
+
+def run_fixed_forecast(name, forecast, Y):
+    """Score a fixed (non-learning) forecast under the same protocol as
+    :func:`run_stream`: target and forecast are both put through the target's
+    past-only standardiser before the error is taken, so the squared errors are
+    on the same scale as those of the learning methods."""
+    from .online import OnlineStandardizer
+    T = len(Y)
+    std_y = OnlineStandardizer(1)
+    yhat = np.empty(T)
+    y_used = np.empty(T)
+    mu_t = np.zeros(T)
+    sd_t = np.ones(T)
+    for t in range(T):
+        mu_t[t], sd_t[t] = float(std_y.mean[0]), float(std_y.std[0])
+        yhat[t] = float(std_y.transform([forecast[t]])[0])
+        y_used[t] = float(std_y.transform([Y[t]])[0])
+        std_y.update([Y[t]])
+    resid = y_used - yhat
+    return StreamResult(name=name, yhat=yhat, y=y_used, resid=resid,
+                        sq_err=resid ** 2, quantiles=None, w_path=None,
+                        extras={"std_y": std_y.freeze(), "mu_t": mu_t,
+                                "sd_t": sd_t})
 
 # --------------------------------------------------------------------------- #
 #  Point / regime metrics (Sec 6)                                             #

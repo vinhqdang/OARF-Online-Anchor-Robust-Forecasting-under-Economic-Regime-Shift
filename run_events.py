@@ -1,14 +1,13 @@
 #!/usr/bin/env python3
 """Real-data event study around COVID-19 and the 2022 energy shock.
 
-The regime-tercile analysis in the main text is aggregate. An economics reader also
-wants to see behaviour around recognisable events. We run fixed-anchor \\OARF{} and the
-no-anchor OGD floor on the real energy combination stream, recording per-step squared
+The regime-tercile analysis in the main text is aggregate. This script looks at
+behaviour around recognisable events. We run fixed-anchor OARF and the no-anchor
+OGD reference on the weekly real-data combination stream, recording per-step squared
 error and the smoothed anchor--residual correlation, and extract two windows: the
 COVID-19 crash (2020) and the 2022 European energy shock. We plot cumulative squared
 loss (OARF minus OGD; negative = OARF better) and the anchor--residual correlation for
-both methods. The point is descriptive --- the MCS shows no significant edge --- but it
-makes the mechanism concrete around dated events. Writes ``results/real/events_*.json``.
+both methods. The analysis is descriptive; the MCS shows no significant edge. Writes ``results/real/events_*.json``.
 """
 
 from __future__ import annotations
@@ -95,7 +94,7 @@ def main():
                 "final_cum_diff": float(cum_o[-1] - cum_g[-1]),
             }
             print(f"  {label:22s} final cum sq-loss (OARF-OGD) = "
-                  f"{cum_o[-1]-cum_g[-1]:+.3f} over {len(idx)} days")
+                  f"{cum_o[-1]-cum_g[-1]:+.3f} over {len(idx)} weeks")
         with open(os.path.join(OUT, f"events_{tgt}.json"), "w") as f:
             json.dump({"target": tgt, "windows": windows}, f)
     print(f"[events] wrote {OUT}/events_*.json")

@@ -33,6 +33,7 @@ PAL = {
     "CostACI": "#bcbd22", "AnchorReg": "#e377c2", "DRIG": "#aec7e8",
     "DR-Combo(Wang26)": "#ffbb78", "FC-DRO(Liu26)": "#98df8a",
     "FC-DRO-ES(Liu26)": "#c5b0d5",
+    "Persistence": "#000000", "Equal-weight": "#6b6ecf",
 }
 
 
@@ -349,19 +350,21 @@ def fig8_dm_heatmap(syn_perseed):
 
 
 def fig9_real_regime(real_detail, real_metrics, target):
-    """Fig. 9 — real-data: realised vol regimes + per-regime/post-cp bars."""
+    """Fig. 9 — real data: rolling error with volatility regimes, and
+    worst-regime MSE by method (weekly design)."""
     reg = np.array(real_detail["regimes"])
     fig, axes = plt.subplots(1, 2, figsize=(11, 3.4))
     ax = axes[0]
     se = real_detail["sq_err"]
-    for nm in ["OGD", "OARF"]:
+    for nm in ["Persistence", "OGD", "OARF"]:
         if nm in se:
-            roll = np.convolve(np.array(se[nm]), np.ones(120) / 120, mode="same")
-            ax.plot(roll, color=_c(nm), lw=1.0, label=nm)
+            roll = np.convolve(np.array(se[nm]), np.ones(26) / 26, mode="same")
+            ax.plot(roll, color=_c(nm), lw=1.0, label=nm,
+                    ls=":" if nm == "Persistence" else "-")
     ax2 = ax.twinx()
     ax2.fill_between(range(len(reg)), 0, reg, color="gray", alpha=0.12, step="mid")
     ax2.set_yticks(sorted(np.unique(reg))); ax2.set_ylabel("vol regime")
-    ax.set_xlabel("trading day"); ax.set_ylabel("rolling sq. error")
+    ax.set_xlabel("week"); ax.set_ylabel("26-week rolling sq. error")
     ax.set_title(f"{target}: rolling error & vol regimes"); ax.legend(loc="upper left")
 
     ax = axes[1]
@@ -379,10 +382,11 @@ def fig10_equity(real_metrics, target):
     """Fig. 10 — volatility-timing equity curves (decision metric, Sec 6)."""
     rows = real_metrics[target]["rows"]
     fig, ax = plt.subplots(figsize=(7.0, 3.6))
-    for nm in ["OARF", "OARF-CD", "OGD", "FC-DRO(Liu26)", "DR-Combo(Wang26)"]:
+    for nm in ["OARF", "OGD", "Equal-weight", "Persistence", "FC-DRO(Liu26)"]:
         if nm in rows and rows[nm].get("equity_curve"):
-            ax.plot(rows[nm]["equity_curve"], color=_c(nm), lw=1.2, label=nm)
-    ax.set_xlabel("trading day"); ax.set_ylabel("cumulative timing P&L")
+            ax.plot(rows[nm]["equity_curve"], color=_c(nm), lw=1.2, label=nm,
+                    ls=":" if nm == "Persistence" else "-")
+    ax.set_xlabel("week"); ax.set_ylabel("cumulative timing P&L")
     ax.set_title(f"{target}: volatility-timing equity curves")
     ax.legend()
     _save(fig, f"fig10_equity_{target}")
@@ -508,7 +512,7 @@ def fig15_events(target):
         ax2.plot(x, w["corr_OGD"], color=_c("OGD"), lw=1.3, label="OGD ($\\xi=0$)")
         ax2.plot(x, w["corr_OARF"], color=_c("OARF"), lw=1.6, label="OARF ($\\xi=1.5$)")
         ax2.set_ylabel(r"$|\mathrm{corr}(a_t,r_t)|$ (EMA)")
-        ax2.set_xlabel("trading day within window")
+        ax2.set_xlabel("week within window")
         ax2.legend(fontsize=7)
         step = max(1, len(x) // 5)
         for a in (ax, ax2):

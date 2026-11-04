@@ -1,17 +1,22 @@
 #!/usr/bin/env python3
 """Real-data forecast-combination experiment (Sec 3-4, 8).
 
-The base experts (AR/EWMA/GARCH/momentum/ridge) are combined online by every
-method in the combination track (Sec 5), including the 2026 distributionally-
-robust combiners that are OARF's headline competitors.  OARF treats the experts
-as its predictors ``x_t`` and the macro-financial drivers as the context ``z_t``
-through which regime shifts travel.  We report point, regime-aware,
-distributional, and economic metrics with DM and MCS significance, over a
-rolling-origin set of evaluation start points (Sec 6, 8).
+The base volatility experts are combined online by every method in the
+combination track (Sec 5). OARF treats the experts as its predictors ``x_t``
+and the macro-financial drivers as the context ``z_t`` through which regime
+shifts travel. Two fixed benchmarks are scored alongside: persistence (last
+period's log realised variance) and the equal-weight average of the experts
+that forecast log realised variance directly.
+
+The default design forecasts weekly, non-overlapping log realised variance
+(``--freq weekly``, results in ``results/real``). ``--freq daily`` reruns the
+earlier design, whose target is a trailing five-day average and therefore
+overlaps its own lag (results in ``results/real_daily``).
 
 Usage::
 
     python run_real.py --targets DCOILBRENTEU DHHNGSP
+    python run_real.py --freq daily
 """
 
 from __future__ import annotations
@@ -27,7 +32,9 @@ from oarf.load_panel import load_panel
 from oarf.models import (COMBINATION_TRACK, AnchorRegression, OARF,
                          build_model_suite)
 
-OUT = "results/real"
+OUT = {"weekly": "results/real", "daily": "results/real_daily"}
+PERSIST = {"weekly": "Persist", "daily": "HAR-d"}
+ANN = {"weekly": 52, "daily": 252}
 
 
 def _driver_channel(panel):
@@ -40,8 +47,8 @@ def _driver_channel(panel):
     return B, len(cols)
 
 
-def run_target(target, eval_fracs=(0.2, 0.35, 0.5)):
-    panel = load_panel(target)
+def run_target(target, eval_fracs=(0.2, 0.35, 0.5), freq="weekly"):
+    panel = load_panel(target, freq=freq)
     d = panel.experts.shape[1]
     p = panel.Z.shape[1]
     T = len(panel.y)
@@ -67,17 +74,27 @@ def run_target(target, eval_fracs=(0.2, 0.35, 0.5)):
         r = ev.run_stream(m, X, Z, Y, record_weights=rec, standardize_y=True)
         results.append(r)
 
+    # fixed benchmarks: persistence and the equal-weight average of the experts
+    # that forecast log realised variance directly (log VIX is on another scale)
+    names_x = panel.expert_names
+    persist = X[:, names_x.index(PERSIST[freq])]
+    on_scale = [i for i, n in enumerate(names_x) if n != "VIX"]
+    results.append(ev.run_fixed_forecast("Persistence", persist, Y))
+    results.append(ev.run_fixed_forecast("Equal-weight", X[:, on_scale].mean(axis=1), Y))
+
     # primary evaluation start = first 20% for warm-up/HP (Sec 8)
     es0 = int(eval_fracs[0] * T)
-    std_y = results[0].extras["std_y"]
+    ann = ANN[freq]
+    vol_target = 0.01 * np.sqrt(252 / ann)
     for r in results:
         pm = ev.point_metrics(r, panel.regimes, panel.changepoints, es0)
         dist = ev.distributional_metrics(r, es0)
-        # unstandardise the log-variance forecast -> raw variance for vol-timing
-        yhat_unstd = r.yhat * std_y._std[0] + std_y.mean[0]
-        var_hat = np.exp(yhat_unstd) if panel.target_type == "logvar" \
-            else np.full(T, np.var(panel.ret))
-        econ = ev.volatility_timing(var_hat, panel.ret, es0)
+        # map the forecast back to raw log variance with the standardiser in
+        # force at each step (past-only), then to variance for vol-timing
+        yhat_raw = r.yhat * r.extras["sd_t"] + r.extras["mu_t"]
+        var_hat = np.exp(yhat_raw)
+        econ = ev.volatility_timing(var_hat, panel.ret, es0,
+                                    target_vol=vol_target, ann=ann)
         # rolling-origin robustness: MSE over several evaluation starts
         ro = {f"MSE@{int(f*100)}pct": ev.mse(r.sq_err[int(f * T):])
               for f in eval_fracs}
@@ -100,12 +117,14 @@ def run_target(target, eval_fracs=(0.2, 0.35, 0.5)):
         "raw_price": panel.raw_price.tolist(),
         "sq_err": {r.name: r.sq_err.tolist() for r in results
                    if r.name in ("OARF", "OGD", "DR-Combo(Wang26)",
-                                 "FC-DRO-ES(Liu26)")},
+                                 "FC-DRO-ES(Liu26)", "Persistence")},
         "expert_names": panel.expert_names,
         "z_names": panel.z_names,
     }
     return {
-        "target": target, "T": T, "n_experts": d, "p": p,
+        "target": target, "freq": freq, "T": T, "n_experts": d, "p": p,
+        "expert_names": panel.expert_names,
+        "sample": [str(panel.dates[0].date()), str(panel.dates[-1].date())],
         "rows": rows,
         "dm": {"names": names, "stat": np.asarray(dm_stat).tolist(),
                "pval": np.asarray(dm_p).tolist()},
@@ -119,19 +138,21 @@ def run_target(target, eval_fracs=(0.2, 0.35, 0.5)):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--targets", nargs="+", default=["DCOILBRENTEU", "DHHNGSP"])
+    ap.add_argument("--freq", choices=["weekly", "daily"], default="weekly")
     args = ap.parse_args()
-    os.makedirs(OUT, exist_ok=True)
+    out = OUT[args.freq]
+    os.makedirs(out, exist_ok=True)
 
     summary = {}
     for tgt in args.targets:
         print(f"[real] {tgt} ...", flush=True)
         try:
-            res, detail = run_target(tgt)
+            res, detail = run_target(tgt, freq=args.freq)
         except FileNotFoundError as e:
             print(f"[real] skip {tgt}: {e}")
             continue
         summary[tgt] = res
-        with open(os.path.join(OUT, f"detail_{tgt}.json"), "w") as f:
+        with open(os.path.join(out, f"detail_{tgt}.json"), "w") as f:
             json.dump(detail, f)
         print(f"\n=== {tgt}  (T={res['T']}, {res['n_experts']} experts) ===")
         print(f"{'model':18s} {'MSE':>9s} {'worstReg':>9s} {'postCP':>9s} "
@@ -143,9 +164,9 @@ def main():
                   f"{cov:7.3f}")
         print(f"MCS survivors: {res['mcs']['survivors']}")
 
-    with open(os.path.join(OUT, "metrics.json"), "w") as f:
+    with open(os.path.join(out, "metrics.json"), "w") as f:
         json.dump(summary, f, indent=2)
-    print(f"\n[real] wrote {OUT}/metrics.json")
+    print(f"\n[real] wrote {out}/metrics.json")
 
 
 if __name__ == "__main__":
