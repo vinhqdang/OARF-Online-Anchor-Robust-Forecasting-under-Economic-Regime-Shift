@@ -1,4 +1,4 @@
-"""Generate the paper's figures (Sec 7) from the saved experiment artefacts.
+"""Generate the paper's figures from the saved experiment artefacts.
 
 Reads ``results/synthetic/*.json`` and ``results/real/*.json`` and writes
 publication-quality PDFs (and PNGs) to ``figures/``.  Run after
@@ -20,6 +20,7 @@ SYN = "results/synthetic"
 REAL = "results/real"
 
 plt.rcParams.update({
+    "pdf.fonttype": 42, "ps.fonttype": 42,  # embed TrueType, not Type 3
     "figure.dpi": 130, "savefig.dpi": 220, "font.size": 10,
     "axes.grid": True, "grid.alpha": 0.25,
     "axes.axisbelow": True, "legend.fontsize": 8, "figure.autolayout": True,
@@ -93,7 +94,7 @@ def fig2_bar_metrics(syn_agg):
         ax.set_yticklabels(order if ax is axes[0] else [], fontsize=7)
         ax.invert_yaxis()
         ax.set_title(title); ax.set_xlabel("MSE")
-    fig.suptitle("Synthetic: accuracy vs interventional robustness (mean $\\pm$ sd, 8 seeds)")
+    fig.suptitle("Synthetic: accuracy vs interventional robustness (mean $\\pm$ sd over 50 seeds)")
     _save(fig, "fig2_bar_metrics")
 
 
@@ -144,7 +145,7 @@ def fig4_pareto(syn_pareto):
 def fig5_immunization(seed=0, T=8000):
     """Fig. 5 — immunisation: the anchor--residual correlation over time.
 
-    The mechanism of Sec 2.2 is to drive ``E[a r] -> 0``.  We recompute, on the
+    The mechanism of the method is to drive ``E[a r] -> 0``.  We recompute, on the
     seed-0 SCM, the running standardised correlation between the anchor and the
     forecast residual for OGD (xi=0) and OARF (xi>0); OARF holds it near zero
     while the reactive learner lets regime structure leak into its residual.
@@ -213,7 +214,7 @@ def fig6_learned_channel(syn_perseed):
     ax.set_ylim(0, 1.02)
     ax.set_xlabel("time step $t$")
     ax.set_ylabel("subspace alignment to true channel")
-    ax.set_title("Online channel discovery (Sec 2.3): recovery over time")
+    ax.set_title("Online channel discovery: recovery over time")
     ax.legend()
     _save(fig, "fig6_learned_channel")
 
@@ -259,7 +260,7 @@ def fig14_alignment_scatter(syn_perseed):
 
 
 def fig16_eigengap_diagnostic(syn_perseed):
-    """Fig. — the online, ground-truth-free eigengap diagnostic (Sec 2.3).
+    """Fig. — the online, ground-truth-free eigengap diagnostic.
 
     (a) Per-seed eigengap (post-warm-up mean) vs. true subspace alignment: the
     diagnostic, computed without the true channel, tracks retrospective recovery
@@ -379,7 +380,7 @@ def fig9_real_regime(real_detail, real_metrics, target):
 
 
 def fig10_equity(real_metrics, target):
-    """Fig. 10 — volatility-timing equity curves (decision metric, Sec 6)."""
+    """Fig. 10 — volatility-timing equity curves (decision metric)."""
     rows = real_metrics[target]["rows"]
     fig, ax = plt.subplots(figsize=(7.0, 3.6))
     for nm in ["OARF", "OGD", "Equal-weight", "Persistence", "FC-DRO(Liu26)"]:

@@ -1,0 +1,177 @@
+% Response to the Journal of Forecasting reviewer (manuscript 7441141),
+% submitted with the transfer to Applied Stochastic Models in Business and Industry.
+\documentclass[12pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage{cmap}
+\input{glyphtounicode}
+\pdfgentounicode=1
+\usepackage[margin=1in]{geometry}
+\usepackage{mathptmx}
+\usepackage{amsmath}
+\usepackage[hidelinks]{hyperref}
+\usepackage{xurl}
+\usepackage{parskip}
+\usepackage{xcolor}
+
+\newenvironment{reviewer}{\par\begingroup\itshape\color{black!70}\leftskip=1.5em}{\par\endgroup}
+
+\begin{document}
+
+\begin{center}
+{\large\bfseries Response to the review from the Journal of Forecasting}\\[4pt]
+Manuscript 7441141, ``Online Anchor-Robust Forecasting under Economic Regime Shift''\\[2pt]
+Quang-Vinh Dang
+\end{center}
+
+I thank the reviewer for a careful and constructive report. The manuscript was
+declined at the \textit{Journal of Forecasting} and has been revised before this
+transfer. Below, the reviewer's comments are in italics, each followed by the change
+made. Section, table and page numbers refer to the revised manuscript.
+
+\section*{Main concern: the paper is difficult to follow}
+
+\begin{reviewer}
+My main concern, however, is that the paper is unusually difficult to follow.
+Despite my familiarity with regime-switching models, I struggled to connect the
+economic motivation, the assumptions about the anchor, and the empirical exercise.
+The paper introduces several extensions before establishing why the basic method is
+needed.
+\end{reviewer}
+
+I agree, and I have reorganised the whole paper around this point.
+\begin{itemize}
+\item The introduction now states one question: if a regime shift moves an observed
+driver, can the forecaster be made robust to it in advance, and what does that cost
+when no shift occurs?
+\item The basic method, with the anchor supplied by the analyst, and its guarantee are
+presented first (Section~3), with no mention of learning the anchor.
+\item The simulation study (Section~4) and the energy application (Section~5) both use
+the basic method.
+\item Learning the anchor from data and the eigengap diagnostic were previously mixed
+into the method section. They are now a separate extension (Section~6), placed after
+the main results and introduced as the answer to a practical question raised by
+Section~5: what to do when the analyst does not know which driver carries the shift.
+\item Section~5 has a new paragraph, ``The anchor and what it assumes''. It states which
+indices are used as the anchor, what would have to be true of them for the method to
+help, why the news-based indices are more plausible candidates than the VIX, and what
+the stress tests of Section~4 predict if the anchor is only weakly aligned with the
+true channel. This connects the assumptions of Proposition~1 to the empirical exercise.
+\item The conclusion (Section~7) is shorter. It ends with a practical procedure for
+deciding whether to use the method.
+\end{itemize}
+
+\begin{reviewer}
+A simple forecasting example near the beginning would help explain what changes
+across regimes, what stays stable, and why the proposed method should improve
+forecasts.
+\end{reviewer}
+
+The introduction now contains such an example (paragraph ``An example'', Table~1).
+\begin{itemize}
+\item A target depends on a stable predictor. A second predictor tracks the target
+but is also moved by an observed driver, in the way a news-based indicator might rise
+with volatility and also with the volume of geopolitical headlines.
+\item In the estimation sample the driver has two regimes; in the forecast period it
+moves to a level not seen before.
+\item The example states explicitly what changes (the relation between the target and
+the second predictor) and what stays stable (the relation with the first predictor).
+\item Least squares puts weight on the second predictor, has the lower in-sample error,
+and roughly doubles its error in the new regime ($0.206$ to $0.452$).
+\item Anchor regression removes that weight and loses almost nothing in the new regime
+($0.240$ to $0.242$), at a small in-sample cost.
+\item The example also shows what the method needs: if the analyst chose a driver
+unrelated to the shift, the penalty would remove signal and buy no protection.
+\item The script that produces Table~1 is in the replication files
+(\texttt{examples/two\_signal\_example.py}).
+\end{itemize}
+
+\begin{reviewer}
+The paper needs a much clearer account of its purpose and contribution before its
+results can be properly assessed.
+\end{reviewer}
+
+The paragraph ``What the paper does'' in the introduction now lists the contribution
+section by section. The paragraph that follows states the findings, including the
+negative ones:
+\begin{itemize}
+\item the gain in simulation disappears when the anchor is noisy or misaligned;
+\item on the energy data OARF is not better than online gradient descent or an
+equal-weight average;
+\item the learned anchor fails on a minority of streams.
+\end{itemize}
+The abstract was rewritten in the same way.
+
+\section*{Technical note: the overlapping target}
+
+\begin{reviewer}
+The target on pg.~10 is the log of a trailing five-day average of squared daily
+returns. At the stated one-step forecast horizon, four of the five squared returns
+are already observed. This creates substantial mechanical persistence, which needs to
+be considered when interpreting the forecast results.
+\end{reviewer}
+
+The reviewer is right, and I confirmed it in the code. The old target shared four of
+its five terms with its own lag, and on Brent its correlation with the previous day's
+value was $0.89$. The real-data study has been rebuilt and rerun with a target that
+does not overlap (Section~5, ``Data and target'').
+\begin{itemize}
+\item \emph{Target.} The target is now the log of weekly realised variance,
+$y_w=\log\sum_{s\in w}r_s^2$, over the daily returns of the week ending on Friday $w$.
+\item \emph{Information set.} Every forecast of $y_w$ uses data up to the end of week
+$w-1$ only.
+\item \emph{No overlap.} Consecutive weeks share no terms. The correlation of the
+target with its own lag falls to $0.53$.
+\item \emph{Sample.} There are $847$ weeks, of which $678$ are evaluated.
+\item \emph{Forecast pool.} The pool was rebuilt for the weekly frequency: last week's
+value, HAR-type $4$- and $13$-week means, RiskMetrics and GARCH variances, the lagged
+VIX, and a rolling ridge regression.
+\item \emph{Pre-processing.} The drivers are no longer pre-scaled with full-sample
+statistics, so all scaling now uses past data only.
+\end{itemize}
+The earlier daily design is kept in Appendix~B, with Table~11, so the reader can see
+how much the overlap flattered every method.
+
+\begin{reviewer}
+A simple persistence forecast should be reported alongside the proposed method so
+that the reader can see what is gained beyond the target's existing predictability.
+\end{reviewer}
+
+Persistence (last week's value) is now reported in Table~9, together with the
+equal-weight average of the forecast pool, and both are scored under the same
+protocol as the learning methods. The two designs give different answers.
+\begin{itemize}
+\item \emph{Weekly design.} Every learned combination beats persistence. For most
+methods the MSE is about a third lower on Brent and a fifth lower on Henry Hub. The
+Model Confidence Set excludes persistence on Brent ($p<0.01$). On Henry Hub
+persistence stays in the set ($p=0.17$), and the text says that the gain there is not
+significant.
+\item \emph{Daily design.} In the old daily design persistence is inside the Model
+Confidence Set with $p=1.00$ on both series (Appendix~B). This confirms the
+reviewer's concern that the earlier results mostly reflected the mechanical
+persistence of the target.
+\end{itemize}
+
+\begin{reviewer}
+A check using a less overlapping target or a longer horizon would also help
+establish whether the findings depend on this construction.
+\end{reviewer}
+
+The weekly target has no overlap at all. Under it the conclusion about OARF is the
+same as before: it is within $1.5\%$ of online gradient descent on both series, and
+the Diebold--Mariano test of OARF against online gradient descent gives $p=0.47$ on
+Brent and $p=0.54$ on Henry Hub. What changed is the interpretation of the comparison
+with simple benchmarks, which now shows a real gain from combining forecasts. The
+paper reads the absence of an OARF advantage as consistent with the uncertainty
+indices being weak or noisy proxies for the channel, which is the case where the
+stress tests of Section~4 predict no gain. It also states that the data cannot rule
+out that energy-volatility regimes are not anchor-mediated mean shifts at all.
+
+\section*{Other changes}
+\begin{itemize}
+\item The appendices on the volatility-timing evaluation (Appendix~C) and on the two
+event windows (Appendix~F) were rerun on the weekly design.
+\item The text was edited throughout for length and clarity.
+\item All code and results are public and regenerate every number in the paper.
+\end{itemize}
+
+\end{document}

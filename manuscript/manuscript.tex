@@ -5,7 +5,7 @@
 % Compile with: pdflatex manuscript && bibtex manuscript \
 %   && pdflatex manuscript && pdflatex manuscript
 
-\documentclass[11pt]{article}
+\documentclass[12pt]{article}
 
 % Compile with pdflatex. We deliberately keep the default OT1 text encoding so
 % the body is set in the Computer Modern *Type-1* (vector) fonts that ship with
@@ -18,6 +18,7 @@
 \input{glyphtounicode}
 \pdfgentounicode=1
 \usepackage[margin=1in]{geometry}
+\usepackage{mathptmx}          % Times text and math (Type-1 fonts)
 \usepackage{amsmath,amssymb,amsthm,bm}
 \usepackage{graphicx}
 \usepackage{booktabs}
@@ -79,14 +80,13 @@ shift, OARF more than halves the worst-case error of online gradient descent, at
 some cost in ordinary error, and stress tests show when the advantage disappears.
 In weekly volatility forecasting for Brent crude and Henry Hub gas, every
 combination method beats a persistence forecast, but OARF is no better than online
-gradient descent or an equal-weight average.
+gradient descent or an equal-weight average. The method is therefore worth using
+only when there is reason to believe that the chosen driver carries the shift, and
+the paper describes checks that test this before deployment.
 
 \vspace{0.6em}
-\noindent\textbf{Keywords:} Online learning; Combining forecasts; Robustness;
-Volatility forecasting; Structural change; Causality.
-
-\vspace{0.3em}
-\noindent\textbf{JEL:} C53, C22, C58, Q47.
+\noindent\textbf{Keywords:} online learning; forecast combination; anchor
+regression; structural change; volatility forecasting.
 \end{abstract}
 
 \section{Introduction}\label{sec:intro}
@@ -741,7 +741,7 @@ DRIG (batch)                   & $0.010\,[0.005,0.030]$ & $0.015$ & $0.014$ & $0
 
 \begin{figure}[htbp]
 \centering
-\includegraphics[width=0.86\textwidth]{fig1_rolling_error.png}
+\includegraphics[width=0.86\textwidth]{fig1_rolling_error}
 \caption{Rolling squared error across regimes on a representative seed (changepoints
 dotted, the shaded band is the warm-up window). The reactive baselines spike at every
 break; \OARF{} stays comparatively flat.}
@@ -750,9 +750,10 @@ break; \OARF{} stays comparatively flat.}
 
 \begin{figure}[htbp]
 \centering
-\includegraphics[width=0.92\textwidth]{fig2_bar_metrics.png}
+\includegraphics[width=0.92\textwidth]{fig2_bar_metrics}
 \caption{Overall, post-changepoint and worst-case interventional MSE on the synthetic
-benchmark, sorted by interventional robustness. The reactive and batch methods win in
+benchmark (means with standard deviations over the $50$ seeds; Table~\ref{tab:syn}
+reports medians), sorted by interventional robustness. The reactive and batch methods win in
 distribution and \OARF{} and the batch oracle win under intervention, so the two panels are
 nearly mirror images.}
 \label{fig:bars}
@@ -760,11 +761,11 @@ nearly mirror images.}
 
 \begin{figure}[htbp]
 \begin{subfigure}{0.5\textwidth}\centering
-\includegraphics[width=\linewidth]{fig3_robustness_curve.png}
+\includegraphics[width=\linewidth]{fig3_robustness_curve}
 \caption{Robustness curve: MSE against intervention magnitude $\|\nu\|$.}\label{fig:robust}
 \end{subfigure}\hfill
 \begin{subfigure}{0.5\textwidth}\centering
-\includegraphics[width=\linewidth]{fig4_pareto.png}
+\includegraphics[width=\linewidth]{fig4_pareto}
 \caption{Adaptation--robustness frontier as $\xi:0\to\infty$.}\label{fig:pareto}
 \end{subfigure}
 \caption{(a) \OARF{} and the batch oracle remain near-flat as interventions grow, while
@@ -775,7 +776,7 @@ learner continuously from the online-gradient-descent corner to maximal robustne
 
 \begin{figure}[htbp]
 \centering
-\includegraphics[width=0.78\textwidth]{fig5_immunization.png}
+\includegraphics[width=0.78\textwidth]{fig5_immunization}
 \caption{Anchor--residual correlation. The smoothed correlation
 $|\mathrm{corr}(a_t,r_t)|$ is held near zero by \OARF{} ($\xi=6$) but spikes for online
 gradient descent ($\xi=0$) at each regime change (dotted).}
@@ -824,7 +825,7 @@ learned channel (\OARFCD{}, alignment $0.84$) & $0.033$ & $0.303$\\
 
 \begin{figure}[htbp]
 \centering
-\includegraphics[width=0.99\textwidth]{fig11_ablations.png}
+\includegraphics[width=0.99\textwidth]{fig11_ablations}
 \caption{Ablations. (a) Sensitivity to the EMA decay $\beta$. (b) Component knock-outs by
 worst-case interventional MSE: the channel and the adaptive step matter most, and a
 random channel is worse than none. (c) Discovered-channel dimension: robustness and alignment both improve slightly with $q$ (true $q=2$ dotted), but worst-case error stays above OGD at every $q$.}
@@ -850,7 +851,7 @@ is, with alignment well above $0.6$ and noise below order one. A weak or guessed
 
 \begin{figure}[htbp]
 \centering
-\includegraphics[width=0.97\textwidth]{fig12_stress.png}
+\includegraphics[width=0.97\textwidth]{fig12_stress}
 \caption{Stress tests of the fixed-channel method (worst-$\doop(A)$ MSE; OGD baseline
 dashed). (a) Increasing anchor observation noise: \OARF{} crosses the no-anchor baseline
 near one standard deviation of noise. (b) Rotating the channel away from the truth:
@@ -907,7 +908,7 @@ The Diebold--Mariano statistics on the synthetic benchmark are large
 
 \begin{figure}[htbp]
 \centering
-\includegraphics[width=0.62\textwidth]{fig8_dm_heatmap.png}
+\includegraphics[width=0.62\textwidth]{fig8_dm_heatmap}
 \caption{Pairwise Diebold--Mariano statistics on the synthetic benchmark; a negative
 entry means the row method is significantly more accurate than the column method.}
 \label{fig:dm}
@@ -939,7 +940,8 @@ daily design for comparison. The sample runs from April 2010 to the week of 26 J
 \begin{table}[htbp]
 \centering
 \caption{The public real-data panel. All series are free and are fetched by the
-released download script; the version used here was downloaded on 4 November 2026.}
+released download script \citep{dang2026oarfcode}; the version used here was
+downloaded on 4 November 2026 \citep{fred2026data,caldara2026gprdata,baker2026epudata}.}
 \label{tab:realdata}
 \small
 \begin{tabular}{llll}
@@ -1060,7 +1062,7 @@ AnchorReg (rolling batch) & $0.741$ & $0.844$ & $0.706$ & 0.52 & $0.984$ & $1.23
 
 \begin{figure}[htbp]
 \centering
-\includegraphics[width=0.97\textwidth]{fig9_real_DCOILBRENTEU.png}
+\includegraphics[width=0.97\textwidth]{fig9_real_DCOILBRENTEU}
 \caption{Brent, weekly design. Left: $26$-week rolling squared error of persistence,
 OGD and \OARF{}, with the volatility regime shaded. Right: worst-regime MSE by method.}
 \label{fig:real}
@@ -1068,7 +1070,7 @@ OGD and \OARF{}, with the volatility regime shaded. Right: worst-regime MSE by m
 
 \begin{figure}[htbp]
 \centering
-\includegraphics[width=0.62\textwidth]{fig13_dm_DCOILBRENTEU.png}
+\includegraphics[width=0.62\textwidth]{fig13_dm_DCOILBRENTEU}
 \caption{Brent, weekly design: pairwise Diebold--Mariano statistics (negative means the
 row method is more accurate than the column method). Persistence and the
 expected-shortfall combiner are clearly worse than the rest; among the other methods
@@ -1159,7 +1161,7 @@ robustness of a known channel, and this tail is its main practical limitation.
 
 \begin{figure}[htbp]
 \centering
-\includegraphics[width=0.72\textwidth]{fig6_learned_channel.png}
+\includegraphics[width=0.72\textwidth]{fig6_learned_channel}
 \caption{Online channel discovery: alignment of the learned channel $B_t$ to the true
 intervention subspace over time. Thin lines are individual seeds, the bold line is their
 mean, and the dotted line is the random-subspace baseline.}
@@ -1168,7 +1170,7 @@ mean, and the dotted line is the random-subspace baseline.}
 
 \begin{figure}[htbp]
 \centering
-\includegraphics[width=0.74\textwidth]{fig14_alignment_scatter.png}
+\includegraphics[width=0.74\textwidth]{fig14_alignment_scatter}
 \caption{Per-seed alignment versus interventional robustness for the learned channel
 ($50$ seeds). Each point is one seed: the horizontal axis is the final subspace
 alignment of \OARFCD{}'s discovered channel and the vertical axis its worst-case
@@ -1202,7 +1204,7 @@ subspace but says nothing about whether that subspace is exogenous.
 
 \begin{figure}[htbp]
 \centering
-\includegraphics[width=0.98\textwidth]{fig16_eigengap_diagnostic.png}
+\includegraphics[width=0.98\textwidth]{fig16_eigengap_diagnostic}
 \caption{Eigengap diagnostic. (a) Per-seed post-warm-up eigengap
 $\kappa$ vs.\ true subspace alignment ($r=0.62$); the dotted line is the
 $25$th-percentile gate. (b) Mean worst-case $\doop(A)$ MSE for OGD, ungated
@@ -1436,7 +1438,7 @@ evaluation is reported for completeness only (Figure~\ref{fig:equity}).
 
 \begin{figure}[htbp]
 \centering
-\includegraphics[width=0.66\textwidth]{fig10_equity_DCOILBRENTEU.png}
+\includegraphics[width=0.66\textwidth]{fig10_equity_DCOILBRENTEU}
 \caption{Brent, weekly design: cumulative volatility-timing profit and loss for
 selected methods.}
 \label{fig:equity}
@@ -1542,7 +1544,7 @@ difference, this is an illustration and not evidence of an advantage.
 
 \begin{figure}[htbp]
 \centering
-\includegraphics[width=0.96\textwidth]{fig15_events_DCOILBRENTEU.png}
+\includegraphics[width=0.96\textwidth]{fig15_events_DCOILBRENTEU}
 \caption{Brent event windows, weekly design. Top: cumulative squared-loss gap,
 \OARF{} minus OGD (shaded where \OARF{} leads or trails). Bottom: the smoothed
 anchor--residual correlation of both methods.}
@@ -1550,22 +1552,32 @@ anchor--residual correlation of both methods.}
 \end{figure}
 
 \section*{Acknowledgments}
-This research did not receive any specific grant from funding agencies in the
-public, commercial, or not-for-profit sectors.
 The author used Claude (Anthropic) between June and November 2026 to help
 write the analysis code and to edit the text of the manuscript. The author
 reviewed and revised all code and text and takes full responsibility for the
 content of this article.
 
-\section*{Conflict of interest statement}
+\section*{Funding}
+This research did not receive any specific grant from funding agencies in the
+public, commercial, or not-for-profit sectors.
+
+\section*{Conflict of interest}
 The author declares no conflict of interest.
 
 \section*{Data availability statement}
 The data that support the findings of this study are openly available from the
-public sources listed in Table~\ref{tab:realdata}. The code and the scripts that
-download these data and regenerate every number, table and figure are openly
+public sources listed in Table~\ref{tab:realdata}
+\citep{fred2026data,caldara2026gprdata,baker2026epudata}. The code and the scripts
+that download these data and regenerate every number, table and figure are openly
 available at
-\url{https://github.com/vinhqdang/OARF-Online-Anchor-Robust-Forecasting-under-Economic-Regime-Shift}.
+\url{https://github.com/vinhqdang/OARF-Online-Anchor-Robust-Forecasting-under-Economic-Regime-Shift}
+\citep{dang2026oarfcode}.
+
+\section*{Ethics approval}
+Not applicable. The study uses only public, non-personal data.
+
+\section*{Permission to reproduce material}
+Not applicable. All figures and tables are original.
 
 \small
 \bibliographystyle{apalike}

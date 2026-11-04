@@ -1,15 +1,16 @@
-% Cover letter for submission to the Journal of Forecasting (Wiley).
+% Cover letter for the transfer to Applied Stochastic Models in Business and Industry (Wiley).
 \documentclass[11pt]{article}
 \usepackage[utf8]{inputenc}
 \usepackage{cmap}
 \input{glyphtounicode}
 \pdfgentounicode=1
 \usepackage[margin=1in]{geometry}
+\usepackage{mathptmx}
 \usepackage[hidelinks]{hyperref}
 \usepackage{xurl}
 \usepackage{parskip}
 
-\newcommand{\venue}{Journal of Forecasting}
+\newcommand{\venue}{Applied Stochastic Models in Business and Industry}
 
 \begin{document}
 
@@ -25,36 +26,41 @@ The Editors\\
 \bigskip
 \noindent Dear Editors,
 
-\bigskip
-\noindent I am submitting the manuscript ``Online Anchor-Robust Forecasting under
-Economic Regime Shift'' for consideration as a research article in \textit{\venue}.
+\noindent I submit the manuscript ``Online Anchor-Robust Forecasting under Economic
+Regime Shift'' for consideration as a research article in \textit{\venue}. The paper
+comes to you through the Wiley Transfer Desk. It was reviewed at the
+\textit{Journal of Forecasting} (manuscript 7441141) and declined there. I have
+since revised it substantially, and the version uploaded here replaces the one that
+was reviewed. A separate document lists each point of the reviewer's report and the
+change made in response.
 
-Most online forecasting methods deal with a regime shift after the fact. They
-detect a change in the loss or in coverage and then recalibrate, so they pay a
-re-adaptation cost at every break. The paper studies the case in which the shift
-arrives through observable drivers, such as geopolitical-risk or policy-uncertainty
-indices, and asks whether a forecaster can be made robust to it in advance.
+The paper addresses a practical forecasting problem: a model fitted on past regimes
+can fail when a driver such as geopolitical risk or policy uncertainty moves to a
+level not seen before. Most online methods react after the loss has risen. The paper
+asks whether a forecaster can be made robust in advance when the shift moves an
+observed driver. The method, OARF, is an online version of anchor regression with a
+single penalty that reduces it to online gradient descent when set to zero. For a
+supplied driver channel I prove a no-regret bound against a comparator evaluated
+under the worst bounded shift of the driver. A simulation study with a known
+structural model shows a large gain in worst-case error and uses stress tests to
+show where the gain disappears. An application to weekly Brent crude and Henry Hub
+gas volatility shows that the learned combinations beat a persistence forecast but
+that OARF is not better than online gradient descent there, and the paper reports
+this result as it is.
 
-The method, OARF, is an online version of anchor regression. It penalises the part
-of the forecast error that is correlated with the drivers, using past-only moving
-averages of the relevant moments, and it reduces to online gradient descent when
-the penalty is zero. For the case where the analyst supplies the driver channel, I
-prove that the learner is no-regret under a notion I call interventional regret, in
-which the comparator is evaluated under the worst bounded intervention on the
-drivers. An optional layer estimates the channel from the data. It is unstable on
-a minority of simulated streams, and the paper proposes a diagnostic, computed
-without knowledge of the true channel, that flags those streams. Reverting to
-plain online learning on the flagged streams lowers the layer's mean worst-case
-error by about a quarter, although the threshold was set on the same simulations.
+I think the paper fits the journal because it combines a stochastic model of regime
+change, an online estimator with a guarantee, and a real business application, and
+because it gives a practitioner a concrete procedure for deciding when the method
+should and should not be used.
 
-The evidence has two parts. On a structural-causal-model benchmark with a held-out
-grid of interventions, OARF more than halves the median worst-case interventional
-error of online gradient descent and cuts that of every online baseline by at least
-40\%, at some cost in ordinary error. Stress tests and assumption-violation scenarios show
-where this advantage disappears: when the driver is noisy or misspecified, or when
-regimes shift the target mechanism or the driver's variance. On sixteen years of
-daily Brent and Henry Hub data, all methods but one lie in the Model Confidence
-Set, so OARF is competitive there but not significantly better.
+The main changes since the review are the following. The real-data target is now
+weekly realised variance over non-overlapping weeks, so no part of the target is
+known when the forecast is made; the earlier overlapping daily design is kept in an
+appendix for comparison. A persistence forecast and an equal-weight average are
+reported as benchmarks. The paper now opens with a short worked forecasting example,
+presents the basic method with a known anchor before any extension, states what the
+anchor must satisfy in the empirical application, and moves the learned-anchor
+extension to its own section after the main results.
 
 Code, data-build scripts and the commands that regenerate every number, table and
 figure are available at
@@ -64,12 +70,12 @@ The manuscript is original, has not been published, and is not under
 consideration elsewhere. I have no competing interests to declare. The study uses
 only public, non-personal data and did not require ethics approval.
 
-\bigskip
 \noindent Thank you for considering the manuscript.
 
 \bigskip
 \noindent Sincerely,\\[2pt]
 Quang-Vinh Dang\\
-British University Vietnam
+British University Vietnam, Hung Yen, Vietnam\\
+\href{mailto:vinh.dq4@buv.edu.vn}{vinh.dq4@buv.edu.vn}
 
 \end{document}
