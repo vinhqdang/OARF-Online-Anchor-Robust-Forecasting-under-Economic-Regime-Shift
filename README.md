@@ -79,17 +79,20 @@ The two experiments answer different questions and the paper is explicit about i
   from 0.147 to 0.113. The quartile threshold is set on the same 50 seeds, so it
   would need calibrating in advance in a real deployment.
 
-* **Real (deployment).** Sixteen years (2010–2026) of daily public data, framed
-  as one-step-ahead **log realised-variance** forecasting (predictable and
-  regime-dependent) combined from heterogeneous experts. There is **no** ground-
-  truth intervention, so we report regime-aware, distributional and
-  decision-economic metrics with DM/MCS significance. Ten of eleven methods,
-  OARF and OARF-CD included, lie within the Model Confidence Set: no method is
-  significantly better than the field, so we read OARF as **competitive but not
-  a clear winner** on real data, not as a success story. The driver–residual
-  coupling is weaker in real series than in the controlled SCM, which is the
-  outcome our stress tests predict for a weak, noisy channel and should not be
-  over-read. We do **not** claim causal identification; the estimand is the
+* **Real (deployment).** Sixteen years (2010–2026) of public data for Brent
+  crude and Henry Hub gas. The target is **weekly** log realised variance,
+  `y_w = log Σ_{s∈w} r_s²` over the daily returns of the week ending Friday `w`,
+  forecast with information up to the end of week `w−1`. Weeks do not overlap,
+  so no part of the target is known in advance (the earlier daily design, a
+  trailing 5-day mean, shared 4 of 5 terms with its lag; it is kept as
+  `python run_real.py --freq daily` and reported in an appendix). Two fixed
+  benchmarks are scored under the same protocol: **persistence** and the
+  **equal-weight** average of the pool. Every learned combination beats
+  persistence (MCS excludes it on Brent, p<0.01; on Henry Hub p=0.17), but OARF
+  is no better than OGD or the equal-weight average (DM OARF vs OGD: p=0.47 on
+  Brent, 0.54 on Henry Hub). We read this as the outcome our stress tests
+  predict when the anchor (VIX, GPR, EPU levels) is a weak, noisy proxy for the
+  true channel. We do **not** claim causal identification; the estimand is the
   diluted-causal parameter.
 
 ## Data sources (§3)
@@ -110,11 +113,10 @@ All public, citation-requested. `download_data.py` fetches them into `data/`:
 `run_real.py` writes `results/real/metrics.json` (+ per-target detail);
 `oarf/figures.py` reads those and writes `figures/*.{pdf,png}`. Seeds are fixed,
 and the learning protocol is sequential (predict → reveal → update; past-only
-standardisation replayed frozen on the held-out grid). One exception: in
-`oarf/load_panel.py` the real-data driver series are pre-scaled with full-sample
-mean and standard deviation. The learners re-standardise with past-only
-statistics, so this only matters for the ridge member of the forecast pool,
-whose penalty then uses full-sample scale; the manuscript states this.
+standardisation replayed frozen on the held-out grid). The real-data drivers are kept in raw units; every
+learner, and the ridge member of the forecast pool, standardises with
+past-only (or training-window) statistics. `examples/two_signal_example.py`
+reproduces the worked example in the introduction.
 
 ## Licence
 
